@@ -46,7 +46,7 @@ if __name__ == '__main__':
     # need to change this if we ever update with glpk support
     params.solver = 'gurobi'
 
-    print ('{}\n\n{:^72}\n{:^72}\n\n{}'.format(''.join(['-']*72), 'Phydelity', 'v{}-dev'.format(version), ''.join(['-']*72)))
+    print ('{}\n\n{:^72}\n{:^72}\n\n{}'.format(''.join(['-']*72), 'Phydelity', 'v{}'.format(version), ''.join(['-']*72)))
 
     # check solver availability
     available_solvers = {}

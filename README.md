@@ -1,10 +1,12 @@
 # Phydelity 
 
+_Inferring putative transmission clusters from phylogenetic trees_
+
 ## Overview
 
-Phydelity is a statistically-principled and phylogeny-informed tool capable of identifying putative transmission clusters in pathogen phylogenies without the introduction of arbitrary distance thresholds.  
+Phydelity, a redesign of [PhyCLIP](http://github.com/alvinxhan/PhyCLIP), is a statistically-principled and phylogeny-informed tool capable of identifying putative transmission clusters in pathogen phylogenies without the introduction of arbitrary distance thresholds.  
 
-Minimally, Phydelity only requires a phylogeny as input.  
+Minimally, Phydelity only requires a phylogeny (in NEWICK format) as input.  
 
 Phydelity infers the within-cluster divergence of putative transmission clusters by first determining the pairwise patristic distance distribution of closely-related tips. This distance distribution comprises of the pairwise distances of sequence _j_ and its closest _k_-neighbouring tips, where the closest _k_-neighbours includes sequence _j_. The user can **optionally** input the desired _k_ parameter **_OR_** allow Phydelity to **automatically scale _k_ to yield the supremum distribution with the lowest overall divergence**.  
 
@@ -45,16 +47,25 @@ $ python setup install
 ```
 
 2. **Run Phydelity**  
+Minimal input command: 
+
 ```
 $ phydelity.py --tree </path/to/treefile.newick>
 ```
+
+See **Full options** below for other analysis options. 
+
+3. **Outputs**
+* cluster\_phydelity\_k<\d+>\_sol<\d+>\_<treefname>.txt - Tab-delimited text file of tip names and corresponding cluster ID. 
+* tree\_phydelity\_k<\d+>\_sol<\d+>\_<treefname>.txt - Figtree-formatted NEXUS tree file with cluster annotations. 
+* pdftree\_phydelity\_k<\d+>\_sol<\d+>\_<treefname>.txt - **Optional** PDF tree file if --pdf_tree is called. 
 
 ## Full options 
 ```
 usage: phydelity.py [-h] [-t TREE] [--k K] [--outgroup OUTGROUP]
                     [--collapse_zero_branch_length]
                     [--equivalent_zero_length EQUIVALENT_ZERO_LENGTH]
-                    [--solver_verbose {0,1}] [--solver_check] [--pdf_tree]
+                    [--solver_verbose <0,1>] [--solver_check] [--pdf_tree]
 
 Phydelity v1.0
 
@@ -77,7 +88,7 @@ Analysis options:
                         = 1e-06).
 
 Solver options:
-  --solver_verbose {0,1}
+  --solver_verbose <0,1>
                         Gurobi solver verbose (default: 0)
   --solver_check        Check if Gurobi is installed.
 
