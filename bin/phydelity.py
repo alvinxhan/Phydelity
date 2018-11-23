@@ -7,6 +7,7 @@ from __future__ import division
 import re
 import argparse
 import numpy as np
+import itertools
 import time
 
 import pyximport; pyximport.install()
@@ -128,8 +129,111 @@ if __name__ == '__main__':
 
     # !-- phydelity specific --#
     print ('\nCalculating distance distribution of closely-related tips...')
-    from phydelityx import get_closely_related_wcl
-    wcl, k_strains = get_closely_related_wcl(params.k, global_leaf_node_id_to_leafname.keys(), global_leafpair_to_distance, global_leaf_to_ancestors, global_leaf_dist_to_node)
+
+    #wcl, k_strains = get_closely_related_wcl(params.k, global_leaf_node_id_to_leafname.keys(), global_leafpair_to_distance, global_leaf_to_ancestors, global_leaf_dist_to_node)
+
+    # determine distance distribution of closely-related tips
+    if params.k:
+        k_range = [params.k]
+        print ('WARNING: k fixed at {}.'.format(params.k))
+    else:
+        k_range = range(2, 6)
+        from phyilpx import p_hypotest
+        print ('Auto-scaling k...')
+
+    closest_distance_diff_distribution = np.zeros(len(global_leaf_node_id_to_leafname), dtype='f4')
+
+    for _, leaf in enumerate(global_leaf_node_id_to_leafname.keys()):
+        # get closest neighbouring leaf of leaf
+        j_array = global_leafpair_to_distance[global_leafpair_to_distance['leaf_i'] == leaf][['leaf_j', 'dist']]
+        closest_leaf = np.sort(j_array, order='dist')['leaf_j'][0]
+
+        # get diff of distance of mrca to leaf and neighbour leaf
+        mrca_node = np.max(list(set(global_leaf_to_ancestors[leaf])&set(global_leaf_to_ancestors[closest_leaf])))
+        mrca_leaf_dist = global_leaf_dist_to_node[(global_leaf_dist_to_node["leaf"] == leaf) & (global_leaf_dist_to_node["node"] == mrca_node)]["dist"].sum()
+        mrca_neighbour_dist = global_leaf_dist_to_node[(global_leaf_dist_to_node["leaf"] == closest_leaf) & (global_leaf_dist_to_node["node"] == mrca_node)]["dist"].sum()
+
+        closest_distance_diff_distribution[_] = np.abs(mrca_leaf_dist - mrca_neighbour_dist)
+
+    # get median difference of closest pairwise distances
+    median_closest_distance_diff = np.median(closest_distance_diff_distribution)
+
+    # if median closest pair distance < 1, then number of demical place to the 2 significant digit will be the deimcal place to round
+    if median_closest_distance_diff < 1:
+        decimals_to_round = np.int(np.abs(np.log10(median_closest_distance_diff))) + 2
+    else:
+        decimals_to_round = 2
+
+    leaf_to_dist_to_csleaf = {}
+    for leaf_i, leaf_j in itertools.combinations(global_leaf_node_id_to_leafname.keys(), 2):
+        dist = np.round(global_nodepair_to_dist[(leaf_i, leaf_j)], decimals=decimals_to_round)
+
+        try:
+            leaf_to_dist_to_csleaf[leaf_i][dist].append(leaf_j)
+        except:
+            try:
+                leaf_to_dist_to_csleaf[leaf_i][dist] = [leaf_j]
+            except:
+                leaf_to_dist_to_csleaf[leaf_i] = {dist:[leaf_j]}
+
+        try:
+            leaf_to_dist_to_csleaf[leaf_j][dist].append(leaf_i)
+        except:
+            try:
+                leaf_to_dist_to_csleaf[leaf_j][dist] = [leaf_i]
+            except:
+                leaf_to_dist_to_csleaf[leaf_j] = {dist:[leaf_i]}
+
+    for k_strains in k_range:
+        leaf_to_kth_sorted_cs_leaves = {}
+        for leaf, dist_to_csleaf in leaf_to_dist_to_csleaf.items():
+            sorted_pw_distances = sorted(dist_to_csleaf.keys())[:k_strains]
+            leaf_to_kth_sorted_cs_leaves[leaf] = [(distance, tuple(dist_to_csleaf[distance])) for distance in sorted_pw_distances]
+
+        core_member_pairwise_leafdist = []
+        for leaf, sorted_kth_dist_cleaves in leaf_to_kth_sorted_cs_leaves.items():
+
+            dist_to_add = []
+
+            add_to_core_dist_binary = 0
+            for distance, cleaves_tuple in sorted_kth_dist_cleaves:
+                dist_to_add.append(distance)
+
+                found_leaf_binary = 0
+                for cleaf in cleaves_tuple:
+                    for (_distance, _cleaves_tuple) in leaf_to_kth_sorted_cs_leaves[cleaf]:
+                        if leaf in _cleaves_tuple:
+                            found_leaf_binary = 1
+                            break
+
+                    if found_leaf_binary == 1:
+                        add_to_core_dist_binary = 1
+                        break
+
+                if add_to_core_dist_binary == 1:
+                    core_member_pairwise_leafdist += dist_to_add
+
+
+        med_x = np.median(core_member_pairwise_leafdist)
+        mad_x = qn(core_member_pairwise_leafdist)
+
+        core_member_pairwise_leafdist = [_ for _ in core_member_pairwise_leafdist if _ <= med_x + mad_x]
+
+        if len(k_range) > 1: # auto-scaling of k
+            if k_strains > 2:
+                p_val = p_hypotest(np.array(sorted(set(core_member_pairwise_leafdist)), dtype='f4'),
+                                   np.array(sorted(set(prev_core_member_pairwise_distance)), dtype='f4'), 1)
+
+                if p_val < 0.05:
+                    wcl = np.amax(prev_core_member_pairwise_distance)
+                    k_strains -= 1
+                    break
+                elif k_strains == 5:
+                    wcl = np.amax(core_member_pairwise_leafdist)
+                    break
+            prev_core_member_pairwise_distance = core_member_pairwise_leafdist[:]
+        else:
+            wcl = np.amax(core_member_pairwise_leafdist)
 
     # distal dissociation
     # level-order sorted list of nodes with leaves >= always 2 for transmission clusters (only reassociate such nodes)
