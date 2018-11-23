@@ -130,8 +130,6 @@ if __name__ == '__main__':
     # !-- phydelity specific --#
     print ('\nCalculating distance distribution of closely-related tips...')
 
-    #wcl, k_strains = get_closely_related_wcl(params.k, global_leaf_node_id_to_leafname.keys(), global_leafpair_to_distance, global_leaf_to_ancestors, global_leaf_dist_to_node)
-
     # determine distance distribution of closely-related tips
     if params.k:
         k_range = [params.k]
@@ -185,6 +183,7 @@ if __name__ == '__main__':
                 leaf_to_dist_to_csleaf[leaf_j] = {dist:[leaf_i]}
 
     for k_strains in k_range:
+
         leaf_to_kth_sorted_cs_leaves = {}
         for leaf, dist_to_csleaf in leaf_to_dist_to_csleaf.items():
             sorted_pw_distances = sorted(dist_to_csleaf.keys())[:k_strains]
@@ -213,7 +212,6 @@ if __name__ == '__main__':
                 if add_to_core_dist_binary == 1:
                     core_member_pairwise_leafdist += dist_to_add
 
-
         med_x = np.median(core_member_pairwise_leafdist)
         mad_x = qn(core_member_pairwise_leafdist)
 
@@ -221,6 +219,7 @@ if __name__ == '__main__':
 
         if len(k_range) > 1: # auto-scaling of k
             if k_strains > 2:
+
                 p_val = p_hypotest(np.array(sorted(set(core_member_pairwise_leafdist)), dtype='f4'),
                                    np.array(sorted(set(prev_core_member_pairwise_distance)), dtype='f4'), 1)
 
@@ -237,10 +236,11 @@ if __name__ == '__main__':
 
     # distal dissociation
     # level-order sorted list of nodes with leaves >= always 2 for transmission clusters (only reassociate such nodes)
+    print ('\nDistal dissociation...')
     cs = 2 # min cluster size = pair
     curr_list_of_ancestral_node = np.sort(np.array([node for node, leaves in global_node_to_leaves.items() if len(leaves) >= cs], dtype='i4'))
     
-    nla_object = node_leaves_reassociation(cs, wcl, curr_list_of_ancestral_node, global_node_to_leaves, global_node_to_ancestral_nodes, global_node_to_descendant_nodes, global_node_to_mean_pwdist, global_node_to_mean_child_dist2anc, global_node_to_parent_node, global_nodepair_to_dist, global_leaf_dist_to_node, global_leaf_to_ancestors, global_leafpair_to_distance)
+    nla_object = node_leaves_reassociation(cs, wcl, curr_list_of_ancestral_node, global_node_to_leaves, global_node_to_ancestral_nodes, global_node_to_descendant_nodes, global_node_to_mean_pwdist, global_node_to_mean_child_dist2anc, global_node_to_parent_node, global_nodepair_to_dist, global_leaf_dist_to_node, global_leaf_to_ancestors)
 
     curr_node_to_leaves, curr_node_to_descendant_nodes, curr_node_to_mean_pwdist = nla_object.nla_main()
 
@@ -289,7 +289,7 @@ if __name__ == '__main__':
                 curr_clusterid_to_taxa[clusterid] = [taxon]
 
         print ('\nCleaning up clusters...')
-        cleanup_object = clean_up_modules(curr_node_to_descendant_nodes, global_node_to_leaves, global_leafpair_to_distance, curr_node_to_leaves, wcl, cs, global_leaf_dist_to_node, global_leaf_to_ancestors, global_node_to_parent_node, global_nodepair_to_dist)
+        cleanup_object = clean_up_modules(curr_node_to_descendant_nodes, global_node_to_leaves, curr_node_to_leaves, wcl, cs, global_leaf_dist_to_node, global_leaf_to_ancestors, global_node_to_parent_node, global_nodepair_to_dist)
 
         # ensure that the most descendant-possible node-id is subtending each cluster
         curr_clusterid_to_taxa, curr_taxon_to_clusterid = cleanup_object.transmission_cleanup(curr_clusterid_to_taxa, curr_taxon_to_clusterid)

@@ -46,7 +46,7 @@ def collapse_zero_branch_length(tree_object, retain_length_bound, treefname):
 # class of modules to reassociate node and leaves by current min cluster size and within-cluster limit
 class node_leaves_reassociation():
 
-    def __init__(self, min_cluster_size, within_cluster_limit=None, nodes_list=None, node_to_leaves=None, node_to_ancestral_nodes=None, node_to_descendant_nodes=None, node_to_mean_pwdist=None, node_to_mean_child_dist2anc=None, node_to_parent_node=None, nodepair_to_dist=None, leaf_dist_to_node=None, leaf_to_ancestors=None, leafpair_to_distance=None):
+    def __init__(self, min_cluster_size, within_cluster_limit=None, nodes_list=None, node_to_leaves=None, node_to_ancestral_nodes=None, node_to_descendant_nodes=None, node_to_mean_pwdist=None, node_to_mean_child_dist2anc=None, node_to_parent_node=None, nodepair_to_dist=None, leaf_dist_to_node=None, leaf_to_ancestors=None):
 
         self.min_cluster_size = min_cluster_size
         self.within_cluster_limit = within_cluster_limit
@@ -60,7 +60,6 @@ class node_leaves_reassociation():
         self.nodepair_to_dist = nodepair_to_dist
         self.leaf_dist_to_node = leaf_dist_to_node
         self.leaf_to_ancestors = leaf_to_ancestors
-        self.leafpair_to_distance = leafpair_to_distance
 
     def get_pwdist_from_leaf_distances_to_node(self, leaves_dist_to_node, desc_node_to_leaves):
         n_i = len(leaves_dist_to_node)
@@ -348,11 +347,10 @@ class node_leaves_reassociation():
 # clean-up modules
 class clean_up_modules():
 
-    def __init__(self, current_node_to_descendant_nodes=None, node_to_leaves=None, leafpair_to_distance=None, current_node_to_leaves=None, within_cluster_limit=None, min_cluster_size=None, leaf_dist_to_node=None, leaf_to_ancestors=None, node_to_parent_node=None, nodepair_to_dist=None):
+    def __init__(self, current_node_to_descendant_nodes=None, node_to_leaves=None, current_node_to_leaves=None, within_cluster_limit=None, min_cluster_size=None, leaf_dist_to_node=None, leaf_to_ancestors=None, node_to_parent_node=None, nodepair_to_dist=None):
 
         self.current_node_to_descendant_nodes = current_node_to_descendant_nodes
         self.node_to_leaves = node_to_leaves
-        self.leafpair_to_distance = leafpair_to_distance
         self.current_node_to_leaves = current_node_to_leaves
         self.within_cluster_limit = within_cluster_limit
         self.min_cluster_size = min_cluster_size
