@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     analyses_options = parser.add_argument_group('Analysis options')
     analyses_options.add_argument('--k', type=int, help='Custom k neighbours (optional).')
-    analyses_options.add_argument('--outgroup', type=str, default=False, help='Taxon (name as appeared in tree) to be set as outgroup for rooting.')
+    analyses_options.add_argument('--outgroup', type=str, default=False, help='Taxon (name as appeared in tree) to be set as outgroup OR type \'midpoint\' for midpoint-rooting.')
     analyses_options.add_argument('--collapse_zero_branch_length', action='store_true', help='Collapse internal nodes with zero branch length of tree before running Phydelity.')
     analyses_options.add_argument('--equivalent_zero_length', default=0.000001, type=float, help='Maximum branch length to be rounded to zero if the --collapse_zero_branch_length flag is passed (default = %(default)s).')
 

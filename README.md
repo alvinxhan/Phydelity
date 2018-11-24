@@ -24,6 +24,7 @@ $ conda install -c etetoolkit ete3
 $ conda install -c anaconda cython
 $ conda install numpy scipy 
 ```
+* For Windows users, you may also need to compile C extensions using Microsoft Visual C++ Compiler for Python. You can install that from [http://www.microsoft.com/en-us/download/details.aspx?id=44266](http://www.microsoft.com/en-us/download/details.aspx?id=44266).
 
 * Install Gurobi (linear programming solver) using Anaconda as well. 
 ```
@@ -65,7 +66,7 @@ See **Full options** below for other analysis options.
 usage: phydelity.py [-h] [-t TREE] [--k K] [--outgroup OUTGROUP]
                     [--collapse_zero_branch_length]
                     [--equivalent_zero_length EQUIVALENT_ZERO_LENGTH]
-                    [--solver_verbose <0,1>] [--solver_check] [--pdf_tree]
+                    [--solver_verbose {0,1}] [--solver_check] [--pdf_tree]
 
 Phydelity v1.0
 
@@ -78,7 +79,7 @@ Required:
 Analysis options:
   --k K                 Custom k neighbours (optional).
   --outgroup OUTGROUP   Taxon (name as appeared in tree) to be set as outgroup
-                        for rooting.
+                        OR type 'midpoint' for midpoint-rooting.
   --collapse_zero_branch_length
                         Collapse internal nodes with zero branch length of
                         tree before running Phydelity.
@@ -88,11 +89,12 @@ Analysis options:
                         = 1e-06).
 
 Solver options:
-  --solver_verbose <0,1>
+  --solver_verbose {0,1}
                         Gurobi solver verbose (default: 0)
   --solver_check        Check if Gurobi is installed.
 
 Output options:
   --pdf_tree            PDF tree output annotated with cluster results (X
                         server required).
+
 ```
