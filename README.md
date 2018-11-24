@@ -41,7 +41,7 @@ $ conda install gurobi
   Method II: If your machine is **NOT** connected via an academic domain but you can verify that you are an academic user.  
     * To be added. 
 
-* Download and install PhyCLIP 
+* Download and install Phydelity. 
 ```
 $ cd /path/to/Phydelity-master/
 $ python setup install 
