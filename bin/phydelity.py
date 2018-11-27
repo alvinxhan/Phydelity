@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Phydelity
 # Author: Alvin X. Han & Edyth Parker
 
