@@ -383,10 +383,10 @@ cdef class phyilpx_treeinfo:
         return self.nodepair_to_distance, leafpair_to_distance
 
     def get_leaf_dist_to_node(self):
-        cdef unsigned int i
+        cdef unsigned int i, node_id
         cdef unsigned int k = 0
-        cdef int node_id
-        cdef unsigned int N = 0
+        #cdef unsigned int N = 0
+        cdef unsigned int N = self.total_nr_nodes
         cdef float dist
 
         cdef object leaf_to_ancestors
@@ -399,35 +399,42 @@ cdef class phyilpx_treeinfo:
                     leaf_to_ancestors[i].append(node_id)
                 except:
                     leaf_to_ancestors[i] = [node_id]
-                N += 1
+                #N += 1
 
         # structured array of node-leaf distance
-        self.leaf_dist_to_node = np.zeros(N, dtype={'names':('leaf', 'node', 'dist'), 'formats':('i4', 'i4', 'f4')})
+        #self.leaf_dist_to_node = np.zeros(N, dtype={'names':('leaf', 'node', 'dist'), 'formats':('i4', 'i4', 'f4')})
+        self.leaf_dist_to_node = np.full((N, N), np.nan, dtype = 'f4') # leaf v node
         for i in leaf_to_ancestors.keys():
             for node_id in leaf_to_ancestors[i]:
                 dist = self.nodepair_to_distance[(i, node_id)]
-                self.leaf_dist_to_node[k] = (i, node_id, dist)
+                #self.leaf_dist_to_node[k] = (i, node_id, dist)
+                self.leaf_dist_to_node[(i, node_id)] = dist
                 k += 1
 
         # dictionary of leaf arrays reverse sorted by distance to node
         self.node_to_leaves = {}
-        cdef np.ndarray curr_struc_array
+        cdef np.ndarray curr_struc_array, leafdist_to_node_arr, leaves_of_node
         for node_id in self.internalnodes:
-            curr_struc_array = self.leaf_dist_to_node[self.leaf_dist_to_node['node'] == node_id][['leaf', 'dist']]
-            self.node_to_leaves[node_id] = np.sort(curr_struc_array, order='dist')['leaf'][::-1]
+            #curr_struc_array = self.leaf_dist_to_node[self.leaf_dist_to_node['node'] == node_id][['leaf', 'dist']]
+            #self.node_to_leaves[node_id] = np.sort(curr_struc_array, order='dist')['leaf'][::-1]
+
+            curr_struc_array = self.leaf_dist_to_node[:,node_id]
+            leafdist_to_node_arr = curr_struc_array[np.isnan(curr_struc_array) == False]
+            leaves_of_node = np.where(np.isnan(curr_struc_array) == False)[0]
+            self.node_to_leaves[node_id] = leaves_of_node[leafdist_to_node_arr.argsort()][::-1]
 
         return self.leaf_dist_to_node, self.node_to_leaves
 
     def get_node_to_parent_node(self):
-        cdef unsigned int node_id
-        cdef unsigned int parent
-        cdef unsigned int i
+        cdef unsigned int node_id, parent, i
         cdef unsigned int N = self.total_nr_nodes - 1
-        cdef np.ndarray node_to_parent_node = np.zeros(N, dtype={'names':('node', 'parent'), 'formats':('i4', 'i4')})
+        #cdef np.ndarray node_to_parent_node = np.zeros(N, dtype={'names':('node', 'parent'), 'formats':('i4', 'i4')})
+        cdef object node_to_parent_node = {}
 
         for i, node_id in enumerate(range(1, self.total_nr_nodes)):
             parent = self.data[node_id].parent
-            node_to_parent_node[i] = (node_id, parent)
+            #node_to_parent_node[i] = (node_id, parent)
+            node_to_parent_node[node_id] = parent
 
         return node_to_parent_node
 

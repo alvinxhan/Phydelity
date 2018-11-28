@@ -69,7 +69,7 @@ class node_leaves_reassociation():
 
         for desc_node, desc_node_leaves in desc_node_to_leaves.items():
             n_desc = len(desc_node_leaves)
-            parent_node = self.node_to_parent_node[self.node_to_parent_node["node"] == desc_node]["parent"].sum()
+            parent_node = self.node_to_parent_node[desc_node]
             term_b += (n_desc)*(n_desc-1)*self.nodepair_to_dist[(parent_node, desc_node)]
 
         return np.float32(2*(term_a-term_b)/(n_i*(n_i-1)))
@@ -92,7 +92,7 @@ class node_leaves_reassociation():
 
             # start from not having any leaves removed
             for leaf in sorted_leaves[l_index+1:]:
-                remaining_leaves_to_node_dist[leaf] = self.leaf_dist_to_node[(self.leaf_dist_to_node['leaf'] == leaf) & (self.leaf_dist_to_node['node'] == main_node)]['dist'].sum()
+                remaining_leaves_to_node_dist[leaf] = self.leaf_dist_to_node[(leaf, main_node)]
 
                 # get all descendant nodes of main node subtending leaf
                 try:
@@ -137,8 +137,8 @@ class node_leaves_reassociation():
         for _n, node in enumerate(nodes_to_visit):
             for _l, leaf in enumerate(tcct_leaves):
 
-                parent_node_of_leaf = self.node_to_parent_node[self.node_to_parent_node["node"] == leaf]["parent"].sum()
-                distance_to_node = self.leaf_dist_to_node[(self.leaf_dist_to_node["leaf"] == leaf) & (self.leaf_dist_to_node["node"] == parent_node_of_leaf)]["dist"].sum()
+                parent_node_of_leaf = self.node_to_parent_node[leaf]
+                distance_to_node = self.leaf_dist_to_node[(leaf, parent_node_of_leaf)]
 
                 if node != parent_node_of_leaf:
                     try:
@@ -397,7 +397,7 @@ class clean_up_modules():
         term_b = 0
         for desc_node, desc_node_leaves in desc_node_to_leaves.items():
             n_desc = len(desc_node_leaves)
-            parent_node = self.node_to_parent_node[self.node_to_parent_node["node"] == desc_node]["parent"].sum()
+            parent_node = self.node_to_parent_node[desc_node]
             term_b += (n_desc)*(n_desc-1)*self.nodepair_to_dist[(parent_node, desc_node)]
 
         return np.float32(2*(term_a-term_b)/(n_i*(n_i-1)))
@@ -417,7 +417,7 @@ class clean_up_modules():
 
             # start from not having any leaves removed
             for leaf in sorted_leaves[l_index + 1:]:
-                remaining_leaves_to_node_dist[leaf] = self.leaf_dist_to_node[(self.leaf_dist_to_node["leaf"] == leaf) & (self.leaf_dist_to_node["node"] == main_node)]["dist"].sum()
+                remaining_leaves_to_node_dist[leaf] = self.leaf_dist_to_node[(leaf, main_node)]
                 try:
                     desc_nodes_subtending_leaf = list(set(self.current_node_to_descendant_nodes[main_node])&set(self.leaf_to_ancestors[leaf]))
                 except:
@@ -449,8 +449,10 @@ class clean_up_modules():
 
             if np.mean(new_pwdist) > self.within_cluster_limit:
                 # reverse sort clustered taxa by distance to node
-                leaf_dist_of_cluster = self.leaf_dist_to_node[self.leaf_dist_to_node['node'] == clusterid][["leaf", "dist"]]
-                rsorted_taxa = np.sort(leaf_dist_of_cluster, order="dist")["leaf"][::-1]
+                leaf_dist_of_cluster = {}
+                for leaf in self.node_to_leaves[clusterid]:
+                    leaf_dist_of_cluster[leaf] = self.leaf_dist_to_node[(leaf, clusterid)]
+                rsorted_taxa = sorted(leaf_dist_of_cluster.keys(), key=leaf_dist_of_cluster.get, reverse=True)
 
                 loo_output_binary, loo_output = self.leave_one_out_leaf_reduction_cleanup(rsorted_taxa, clusterid)
                 if loo_output_binary == False:

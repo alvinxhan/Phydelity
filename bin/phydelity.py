@@ -148,8 +148,8 @@ if __name__ == '__main__':
 
         # get diff of distance of mrca to leaf and neighbour leaf
         mrca_node = np.max(list(set(global_leaf_to_ancestors[leaf])&set(global_leaf_to_ancestors[closest_leaf])))
-        mrca_leaf_dist = global_leaf_dist_to_node[(global_leaf_dist_to_node["leaf"] == leaf) & (global_leaf_dist_to_node["node"] == mrca_node)]["dist"].sum()
-        mrca_neighbour_dist = global_leaf_dist_to_node[(global_leaf_dist_to_node["leaf"] == closest_leaf) & (global_leaf_dist_to_node["node"] == mrca_node)]["dist"].sum()
+        mrca_leaf_dist = global_leaf_dist_to_node[(leaf, mrca_node)]
+        mrca_neighbour_dist = global_leaf_dist_to_node[(closest_leaf, mrca_node)]
 
         closest_distance_diff_distribution[_] = np.abs(mrca_leaf_dist - mrca_neighbour_dist)
 

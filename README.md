@@ -12,7 +12,8 @@ Phydelity infers the within-cluster divergence of putative transmission clusters
 
 A manuscript describing Phydelity is currently available on bioRxiv:  
 Inferring putative transmission clusters with Phydelity  
-Alvin Xiaochuan Han, Edyth Parker, Sebastian Maurer-Stroh, Colin Russell
+Alvin Han, Edyth Parker, Sebastian Maurer-Stroh, Colin Russell  
+bioRxiv 477653; doi: https://doi.org/10.1101/477653  
 
 ## Quickstart (for users of an academic institution only)
 1. **Installation**  
