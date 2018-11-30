@@ -22,7 +22,7 @@ def p_hypotest(data1, data2, method):
         return kuiper(data1, data2)
 
 @cython.boundscheck(False)
-cdef float hypotest(float[:] data1, float[:] data2, int method):
+cdef float hypotest(float[:] data1, float[:] data2, long method):
     if method == 1:
         return kuiper(data1, data2)
 
@@ -38,7 +38,7 @@ cdef float _kuiper_dist(float q):
     cdef float termbf = 0.
     cdef float dist = 1.
 
-    cdef unsigned int j
+    cdef long j
 
     a2 = -2*q*q
 
@@ -55,10 +55,10 @@ cdef float _kuiper_dist(float q):
 
 @cython.boundscheck(False)
 cdef float kuiper(float [:] data1, float [:] data2):
-    cdef int j1 = 0
-    cdef int j2 = 0
-    cdef int n1
-    cdef int n2
+    cdef long j1 = 0
+    cdef long j2 = 0
+    cdef long n1
+    cdef long n2
     cdef float eff_n
     cdef float fn1 = 0.
     cdef float fn2 = 0.
@@ -120,17 +120,17 @@ cdef float kuiper(float [:] data1, float [:] data2):
     """
 
 cdef struct Node:
-    int parent
-    int* children
-    int children_length
+    long parent
+    long* children
+    long children_length
     float edge_distance
 
 @cython.no_gc_clear
 cdef class phyilpx_treeinfo:
 
     cdef Node* data
-    cdef unsigned int depth
-    cdef unsigned int total_nr_nodes
+    cdef long depth
+    cdef long total_nr_nodes
     cdef object leafname_to_leaf_nodeid
     cdef object leaf_nodeid_to_leafname
     cdef object internalnodes
@@ -146,7 +146,7 @@ cdef class phyilpx_treeinfo:
 
     def __init__(self, newick_tree, treefname, outgroup, collapse_zero_branch_length_binary, eq_zero_branch_length):
 
-        cdef int node_id
+        cdef long node_id
 
         self.np_buffer = None # numpy memory buffer
 
@@ -219,7 +219,7 @@ cdef class phyilpx_treeinfo:
 
             self.data[node_id].children_length = len(children_list)
 
-            self.data[node_id].children = <int*> PyMem_Malloc(len(children_list) * sizeof(int))
+            self.data[node_id].children = <long*> PyMem_Malloc(len(children_list) * sizeof(long))
             if not self.data[node_id].children:
                 raise MemoryError()
 
@@ -243,11 +243,11 @@ cdef class phyilpx_treeinfo:
 
     def get_leaves(self, node_id):
         # return array of leaves subtended by a given node
-        cdef unsigned int i
-        cdef unsigned int n = 0
+        cdef long i
+        cdef long n = 0
 
         if self.np_buffer is None:
-            self.np_buffer = np.ndarray(len(self.leaf_nodeid_to_leafname), dtype=int)
+            self.np_buffer = np.ndarray(len(self.leaf_nodeid_to_leafname), dtype=np.int64)
 
         to_visit = [node_id]
         for i in to_visit :
@@ -261,16 +261,16 @@ cdef class phyilpx_treeinfo:
 
     def mrca(self, a, b) :
         # return mrca of 2 nodes
-        visited = np.zeros(self.depth, dtype=int)
+        visited = np.zeros(self.depth, dtype=np.int64)
 
         return self._mrca(visited, a, b)
 
     @cython.boundscheck(False)
-    cdef int _mrca(self, long[:] visited, int a, int b) nogil :
-        cdef int n
-        cdef int i
-        cdef int mrca = -1
-        cdef int a_depth
+    cdef long _mrca(self, long[:] visited, long a, long b) nogil :
+        cdef long n
+        cdef long i
+        cdef long mrca = -1
+        cdef long a_depth
 
         n = a
         i = 0
@@ -302,10 +302,10 @@ cdef class phyilpx_treeinfo:
         return mrca
 
     @cython.boundscheck(False)
-    cdef float get_distance(self, int a, int b):
-        cdef int mrca
+    cdef float get_distance(self, long a, long b):
+        cdef long mrca
         cdef float d = 0
-        cdef int n
+        cdef long n
 
         mrca = self.mrca(a, b)
 
@@ -324,9 +324,9 @@ cdef class phyilpx_treeinfo:
         return self._is_ancestor( a, b )
 
     @cython.boundscheck(False)
-    cdef int _is_ancestor(self, int a, int b) nogil :
-        cdef int i
-        cdef int n
+    cdef long _is_ancestor(self, long a, long b) nogil :
+        cdef long i
+        cdef long n
 
         # is a an ancestor of b?
         i = b
@@ -355,17 +355,17 @@ cdef class phyilpx_treeinfo:
         return self.leaf_nodeid_to_leafname, self.original_tree_string
 
     def get_nodepair_distance(self):
-        cdef unsigned int i
-        cdef unsigned int j
-        cdef unsigned int k
-        cdef unsigned int N = self.total_nr_nodes # length of all nodes
+        cdef long i
+        cdef long j
+        cdef long k
+        cdef long N = self.total_nr_nodes # length of all nodes
         cdef float dist
 
-        self.nodepair_to_distance = np.zeros((N,N), dtype='f4')
+        self.nodepair_to_distance = np.zeros((N,N), dtype=np.float32)
 
-        cdef unsigned int N_leafpairs = 2*nCr(len(self.leaf_nodeid_to_leafname), 2)
+        cdef long N_leafpairs = 2*nCr(len(self.leaf_nodeid_to_leafname), 2)
         cdef np.ndarray leafpair_to_distance = np.zeros(N_leafpairs,
-                                                        dtype = {'names':('leaf_i', 'leaf_j', 'dist'), 'formats':('i4', 'i4', 'f4')}) # structured array
+                                                        dtype = {'names':('leaf_i', 'leaf_j', 'dist'), 'formats':(np.int64, np.int64, np.float32)}) # structured array
 
         k = 0
         # pairwise patristic distance array of all nodes present
@@ -383,10 +383,10 @@ cdef class phyilpx_treeinfo:
         return self.nodepair_to_distance, leafpair_to_distance
 
     def get_leaf_dist_to_node(self):
-        cdef unsigned int i, node_id
-        cdef unsigned int k = 0
-        #cdef unsigned int N = 0
-        cdef unsigned int N = self.total_nr_nodes
+        cdef long i, node_id
+        cdef long k = 0
+        #cdef long N = 0
+        cdef long N = self.total_nr_nodes
         cdef float dist
 
         cdef object leaf_to_ancestors
@@ -402,8 +402,8 @@ cdef class phyilpx_treeinfo:
                 #N += 1
 
         # structured array of node-leaf distance
-        #self.leaf_dist_to_node = np.zeros(N, dtype={'names':('leaf', 'node', 'dist'), 'formats':('i4', 'i4', 'f4')})
-        self.leaf_dist_to_node = np.full((N, N), np.nan, dtype = 'f4') # leaf v node
+        #self.leaf_dist_to_node = np.zeros(N, dtype={'names':('leaf', 'node', 'dist'), 'formats':(np.int64, np.int64, np.float32)})
+        self.leaf_dist_to_node = np.full((N, N), np.nan, dtype = np.float32) # leaf v node
         for i in leaf_to_ancestors.keys():
             for node_id in leaf_to_ancestors[i]:
                 dist = self.nodepair_to_distance[(i, node_id)]
@@ -426,9 +426,9 @@ cdef class phyilpx_treeinfo:
         return self.leaf_dist_to_node, self.node_to_leaves
 
     def get_node_to_parent_node(self):
-        cdef unsigned int node_id, parent, i
-        cdef unsigned int N = self.total_nr_nodes - 1
-        #cdef np.ndarray node_to_parent_node = np.zeros(N, dtype={'names':('node', 'parent'), 'formats':('i4', 'i4')})
+        cdef long node_id, parent, i
+        cdef long N = self.total_nr_nodes - 1
+        #cdef np.ndarray node_to_parent_node = np.zeros(N, dtype={'names':('node', 'parent'), 'formats':(np.int64, np.int64)})
         cdef object node_to_parent_node = {}
 
         for i, node_id in enumerate(range(1, self.total_nr_nodes)):
@@ -440,22 +440,22 @@ cdef class phyilpx_treeinfo:
 
     def get_node_to_mean_child_dist2root(self):
 
-        cdef unsigned int node_id
-        cdef unsigned int child_node_id
-        cdef unsigned int i
-        cdef unsigned int k
+        cdef long node_id
+        cdef long child_node_id
+        cdef long i
+        cdef long k
         cdef float dist
 
         cdef object children_of_node
 
-        cdef unsigned int N = len(self.internalnodes)
+        cdef long N = len(self.internalnodes)
         cdef np.ndarray child_dist_to_node
-        cdef np.ndarray node_to_mean_child_dist2root = np.zeros(N, dtype={'names':('node', 'dist'), 'formats':('i4', 'f4')})
+        cdef np.ndarray node_to_mean_child_dist2root = np.zeros(N, dtype={'names':('node', 'dist'), 'formats':(np.int64, np.float32)})
 
         for k, node_id in enumerate(self.internalnodes):
             children_of_node = self.get_children(node_id)
 
-            child_dist_to_node = np.zeros(len(children_of_node), dtype='f4')
+            child_dist_to_node = np.zeros(len(children_of_node), dtype=np.float32)
             for i, child_node_id in enumerate(children_of_node):
 
                 dist = self.nodepair_to_distance[(child_node_id, 0)]
@@ -468,11 +468,11 @@ cdef class phyilpx_treeinfo:
     def get_ancestral_relations(self):
 
         cdef object entry
-        cdef unsigned int i
-        cdef unsigned int j
-        cdef unsigned int k
-        cdef unsigned int node_id
-        cdef unsigned int N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
+        cdef long i
+        cdef long j
+        cdef long k
+        cdef long node_id
+        cdef long N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
         cdef float mean_dist_to_root
 
         cdef object leaf_to_ancestors
@@ -483,7 +483,7 @@ cdef class phyilpx_treeinfo:
         cdef object node_to_mean_pwdist
 
         cdef np.ndarray leaves_to_node
-        cdef np.ndarray node_to_mean_child_dist2anc = np.zeros((N,N), dtype='f4')
+        cdef np.ndarray node_to_mean_child_dist2anc = np.zeros((N,N), dtype=np.float32)
 
         node_to_mean_child_dist2root = self.get_node_to_mean_child_dist2root() # get mean child node distances to root for every internal node
 
@@ -516,7 +516,7 @@ cdef class phyilpx_treeinfo:
                 node_to_mean_child_dist2anc[(node_id, i)] = mean_dist_to_root - self.nodepair_to_distance[i][0] # indexed by node to anc
 
             leafpairs_to_node = list(itertools.combinations(leaves_to_node, 2))
-            pwdist_to_node = np.zeros(len(leafpairs_to_node), dtype='f4')
+            pwdist_to_node = np.zeros(len(leafpairs_to_node), dtype=np.float32)
             for k, (i,j) in enumerate(leafpairs_to_node):
                 pwdist_to_node[k] = self.nodepair_to_distance[(i,j)]
 
@@ -526,18 +526,18 @@ cdef class phyilpx_treeinfo:
         return node_to_ancestral_nodes, node_to_descendant_nodes, leaf_to_ancestors, node_to_mean_child_dist2anc, self.node_to_pwdist, node_to_mean_pwdist
 
     def get_global_pval(self, hytest_method):
-        cdef unsigned int i
-        cdef unsigned int j
-        cdef unsigned int x
-        cdef unsigned int y
-        cdef unsigned int k
-        cdef unsigned int N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
+        cdef long i
+        cdef long j
+        cdef long x
+        cdef long y
+        cdef long k
+        cdef long N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
         cdef float pval
         cdef float pval0
         cdef float pval1
         cdef np.ndarray ij_product_pwdist
         cdef np.ndarray ij_pwdist
-        cdef np.ndarray nodepair_to_pval = np.zeros((N, N), dtype='f4')
+        cdef np.ndarray nodepair_to_pval = np.zeros((N, N), dtype=np.float32)
         cdef object leaves_product
 
         for i, j in itertools.combinations(self.internalnodes, 2):
@@ -546,7 +546,7 @@ cdef class phyilpx_treeinfo:
 
                 leaves_product = list(itertools.product(self.node_to_leaves[i], self.node_to_leaves[j]))
 
-                ij_product_pwdist = np.zeros(len(leaves_product), dtype='f4')
+                ij_product_pwdist = np.zeros(len(leaves_product), dtype=np.float32)
                 for k, (x,y) in enumerate(leaves_product):
                     ij_product_pwdist[k] = self.nodepair_to_distance[(x,y)]
                 ij_pwdist = np.concatenate((self.node_to_pwdist[i], self.node_to_pwdist[j], ij_product_pwdist))

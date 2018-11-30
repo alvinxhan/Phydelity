@@ -1,6 +1,8 @@
 from __future__ import division
 import numpy as np
 
+int = np.int64
+
 def weighted_high_median(a, wts):
     N = len(a)
     wtotal = 0
@@ -64,7 +66,7 @@ def qn(data):
     left = np.arange(n+1,1,-1)
     right = np.full(n,n, dtype= np.int64)
 
-    work = np.zeros(n) # dtype = np.float64
+    work = np.zeros(n, dtype=np.float32)
     weight = np.zeros(n, np.int64)
     P = np.zeros(n, np.int64)
     Q = np.zeros(n, np.int64)
