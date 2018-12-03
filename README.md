@@ -45,7 +45,7 @@ $ conda install gurobi
 * Download and install Phydelity. 
 ```
 $ cd /path/to/Phydelity-master/
-$ python setup install 
+$ python setup.py install 
 ```
 
 2. **Run Phydelity**  
