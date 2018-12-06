@@ -13,30 +13,30 @@ import time
 from phyilpd.tree_utils import collapse_zero_branch_length
 
 cdef extern from "math.h":
-    float exp "exp" (float)
-    float sqrt "sqrt" (float)
-    float fabs "fabs" (float)
+    double exp "exp" (double)
+    double sqrt "sqrt" (double)
+    double fabs "fabs" (double)
 
 def p_hypotest(data1, data2, method):
     if method == 1:
         return kuiper(data1, data2)
 
 @cython.boundscheck(False)
-cdef float hypotest(float[:] data1, float[:] data2, long method):
+cdef double hypotest(double[:] data1, double[:] data2, long method):
     if method == 1:
         return kuiper(data1, data2)
 
 @cython.boundscheck(False)
-cdef float _kuiper_dist(float q):
+cdef double _kuiper_dist(double q):
 
-    cdef float EPS1 = 0.001
-    cdef float EPS2 = 0.00000001
+    cdef double EPS1 = 0.001
+    cdef double EPS2 = 0.00000001
 
-    cdef float a2
-    cdef float term
-    cdef float sum = 0.
-    cdef float termbf = 0.
-    cdef float dist = 1.
+    cdef double a2
+    cdef double term
+    cdef double sum = 0.
+    cdef double termbf = 0.
+    cdef double dist = 1.
 
     cdef long j
 
@@ -54,19 +54,19 @@ cdef float _kuiper_dist(float q):
     return dist
 
 @cython.boundscheck(False)
-cdef float kuiper(float [:] data1, float [:] data2):
+cdef double kuiper(double [:] data1, double [:] data2):
     cdef long j1 = 0
     cdef long j2 = 0
     cdef long n1
     cdef long n2
-    cdef float eff_n
-    cdef float fn1 = 0.
-    cdef float fn2 = 0.
-    cdef float d1
-    cdef float d2
-    cdef float dt
-    cdef float lam
-    cdef float d = 0.
+    cdef double eff_n
+    cdef double fn1 = 0.
+    cdef double fn2 = 0.
+    cdef double d1
+    cdef double d2
+    cdef double dt
+    cdef double lam
+    cdef double d = 0.
 
     n1 = len(data1)  # number of elements in data1
     n2 = len(data2)  # number of elements in data2
@@ -97,8 +97,8 @@ cdef float kuiper(float [:] data1, float [:] data2):
         from scipy.stats import kstwobign
 
         # change data list to array
-        data1 = np.asarray(data1, dtype=np.float32)
-        data2 = np.asarray(data2, dtype=np.float32)
+        data1 = np.asarray(data1, dtype=np.float64)
+        data2 = np.asarray(data2, dtype=np.float64)
 
         n1 = len(data1) # number of elements in data1
         n2 = len(data2) # number of elements in data2
@@ -108,9 +108,9 @@ cdef float kuiper(float [:] data1, float [:] data2):
         cdf1 = np.searchsorted(data1,data_all,side='right')/n1
         cdf2 = np.searchsorted(data2,data_all,side='right')/n2
 
-        d = np.max(np.absolute(cdf1-cdf2), dtype=np.float32)
+        d = np.max(np.absolute(cdf1-cdf2), dtype=np.float64)
         # Note: d absolute not signed distance
-        en = np.sqrt((n1*n2)/(n1+n2), dtype=np.float32)
+        en = np.sqrt((n1*n2)/(n1+n2), dtype=np.float64)
 
         try:
             prob = kstwobign.sf((en + 0.12 + 0.11 / en) * d)
@@ -123,7 +123,7 @@ cdef struct Node:
     long parent
     long* children
     long children_length
-    float edge_distance
+    double edge_distance
 
 @cython.no_gc_clear
 cdef class phyilpx_treeinfo:
@@ -172,13 +172,10 @@ cdef class phyilpx_treeinfo:
 
         # collapse zero branch length
         if collapse_zero_branch_length_binary:
-            tree = collapse_zero_branch_length(tree, np.float32(eq_zero_branch_length), treefname)
+            tree = collapse_zero_branch_length(tree, np.float64(eq_zero_branch_length), treefname)
 
             if tree == False:
                 raise Exception('No branches were collapsed. Check the upper limit of zero-length branches on your tree and adjust accordingly using --equivalent_zero_length')
-
-        # get original tree string
-        self.original_tree_string = tree.write(format=5)
 
         treesize = len(tree.get_descendants()) + 1 # size of tree (all nodes + leaves)
         self.data = <Node*> PyMem_Malloc(treesize*sizeof(Node)) # create data array and allocate memory
@@ -200,9 +197,13 @@ cdef class phyilpx_treeinfo:
                 self.leaf_nodeid_to_leafname[node_id] = node.name
                 self.leafname_to_leaf_nodeid[node.name] = node_id
             else:
+                node.add_feature('name', node_id)
                 self.internalnodes.append(node_id)
 
         self.total_nr_nodes = node_id + 1 # total number of nodes
+
+        # get original tree string
+        self.original_tree_string = tree.write(format=3)
 
         for node_id, node in enumerate(tree.traverse(strategy='levelorder')):
             try:
@@ -302,9 +303,9 @@ cdef class phyilpx_treeinfo:
         return mrca
 
     @cython.boundscheck(False)
-    cdef float get_distance(self, long a, long b):
+    cdef double get_distance(self, long a, long b):
         cdef long mrca
-        cdef float d = 0
+        cdef double d = 0
         cdef long n
 
         mrca = self.mrca(a, b)
@@ -359,13 +360,13 @@ cdef class phyilpx_treeinfo:
         cdef long j
         cdef long k
         cdef long N = self.total_nr_nodes # length of all nodes
-        cdef float dist
+        cdef double dist
 
-        self.nodepair_to_distance = np.zeros((N,N), dtype=np.float32)
+        self.nodepair_to_distance = np.zeros((N,N), dtype=np.float64)
 
         cdef long N_leafpairs = 2*nCr(len(self.leaf_nodeid_to_leafname), 2)
         cdef np.ndarray leafpair_to_distance = np.zeros(N_leafpairs,
-                                                        dtype = {'names':('leaf_i', 'leaf_j', 'dist'), 'formats':(np.int64, np.int64, np.float32)}) # structured array
+                                                        dtype = {'names':('leaf_i', 'leaf_j', 'dist'), 'formats':(np.int64, np.int64, np.float64)}) # structured array
 
         k = 0
         # pairwise patristic distance array of all nodes present
@@ -387,7 +388,7 @@ cdef class phyilpx_treeinfo:
         cdef long k = 0
         #cdef long N = 0
         cdef long N = self.total_nr_nodes
-        cdef float dist
+        cdef double dist
 
         cdef object leaf_to_ancestors
 
@@ -402,8 +403,8 @@ cdef class phyilpx_treeinfo:
                 #N += 1
 
         # structured array of node-leaf distance
-        #self.leaf_dist_to_node = np.zeros(N, dtype={'names':('leaf', 'node', 'dist'), 'formats':(np.int64, np.int64, np.float32)})
-        self.leaf_dist_to_node = np.full((N, N), np.nan, dtype = np.float32) # leaf v node
+        #self.leaf_dist_to_node = np.zeros(N, dtype={'names':('leaf', 'node', 'dist'), 'formats':(np.int64, np.int64, np.float64)})
+        self.leaf_dist_to_node = np.full((N, N), np.nan, dtype = np.float64) # leaf v node
         for i in leaf_to_ancestors.keys():
             for node_id in leaf_to_ancestors[i]:
                 dist = self.nodepair_to_distance[(i, node_id)]
@@ -444,18 +445,18 @@ cdef class phyilpx_treeinfo:
         cdef long child_node_id
         cdef long i
         cdef long k
-        cdef float dist
+        cdef double dist
 
         cdef object children_of_node
 
         cdef long N = len(self.internalnodes)
         cdef np.ndarray child_dist_to_node
-        cdef np.ndarray node_to_mean_child_dist2root = np.zeros(N, dtype={'names':('node', 'dist'), 'formats':(np.int64, np.float32)})
+        cdef np.ndarray node_to_mean_child_dist2root = np.zeros(N, dtype={'names':('node', 'dist'), 'formats':(np.int64, np.float64)})
 
         for k, node_id in enumerate(self.internalnodes):
             children_of_node = self.get_children(node_id)
 
-            child_dist_to_node = np.zeros(len(children_of_node), dtype=np.float32)
+            child_dist_to_node = np.zeros(len(children_of_node), dtype=np.float64)
             for i, child_node_id in enumerate(children_of_node):
 
                 dist = self.nodepair_to_distance[(child_node_id, 0)]
@@ -473,7 +474,7 @@ cdef class phyilpx_treeinfo:
         cdef long k
         cdef long node_id
         cdef long N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
-        cdef float mean_dist_to_root
+        cdef double mean_dist_to_root
 
         cdef object leaf_to_ancestors
         cdef object node_to_ancestral_nodes
@@ -483,7 +484,7 @@ cdef class phyilpx_treeinfo:
         cdef object node_to_mean_pwdist
 
         cdef np.ndarray leaves_to_node
-        cdef np.ndarray node_to_mean_child_dist2anc = np.zeros((N,N), dtype=np.float32)
+        cdef np.ndarray node_to_mean_child_dist2anc = np.zeros((N,N), dtype=np.float64)
 
         node_to_mean_child_dist2root = self.get_node_to_mean_child_dist2root() # get mean child node distances to root for every internal node
 
@@ -516,7 +517,7 @@ cdef class phyilpx_treeinfo:
                 node_to_mean_child_dist2anc[(node_id, i)] = mean_dist_to_root - self.nodepair_to_distance[i][0] # indexed by node to anc
 
             leafpairs_to_node = list(itertools.combinations(leaves_to_node, 2))
-            pwdist_to_node = np.zeros(len(leafpairs_to_node), dtype=np.float32)
+            pwdist_to_node = np.zeros(len(leafpairs_to_node), dtype=np.float64)
             for k, (i,j) in enumerate(leafpairs_to_node):
                 pwdist_to_node[k] = self.nodepair_to_distance[(i,j)]
 
@@ -532,12 +533,12 @@ cdef class phyilpx_treeinfo:
         cdef long y
         cdef long k
         cdef long N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
-        cdef float pval
-        cdef float pval0
-        cdef float pval1
+        cdef double pval
+        cdef double pval0
+        cdef double pval1
         cdef np.ndarray ij_product_pwdist
         cdef np.ndarray ij_pwdist
-        cdef np.ndarray nodepair_to_pval = np.zeros((N, N), dtype=np.float32)
+        cdef np.ndarray nodepair_to_pval = np.zeros((N, N), dtype=np.float64)
         cdef object leaves_product
 
         for i, j in itertools.combinations(self.internalnodes, 2):
@@ -546,7 +547,7 @@ cdef class phyilpx_treeinfo:
 
                 leaves_product = list(itertools.product(self.node_to_leaves[i], self.node_to_leaves[j]))
 
-                ij_product_pwdist = np.zeros(len(leaves_product), dtype=np.float32)
+                ij_product_pwdist = np.zeros(len(leaves_product), dtype=np.float64)
                 for k, (x,y) in enumerate(leaves_product):
                     ij_product_pwdist[k] = self.nodepair_to_distance[(x,y)]
                 ij_pwdist = np.concatenate((self.node_to_pwdist[i], self.node_to_pwdist[j], ij_product_pwdist))

@@ -24,6 +24,16 @@ class phydelity_output(object):
 
         curr_tree_string = self.ori_tree_string
 
+        # get node-ids annotated for internal nodes first
+        edited_tree_string = []
+        prev_end = 0
+        for expr in re.finditer('\)(\d+):', curr_tree_string):
+            edited_tree_string.append(curr_tree_string[prev_end:expr.start()+1])
+            edited_tree_string.append('[&NODE_ID=\'{}\']:'.format(expr.group(1)))
+            prev_end = expr.end()
+        edited_tree_string.append(curr_tree_string[prev_end:])
+        curr_tree_string = ''.join(edited_tree_string)
+
         with open('cluster_{}.txt'.format(self.outfname), 'w') as output:
 
             output.write('CLUSTER\tTAXA\r\n')

@@ -2,6 +2,10 @@
 
 _Inferring putative transmission clusters from phylogenetic trees_
 
+## Latest updates 
+
+* 6-Dec-2018: Fixed bug which was overly strict when cleaning up clusters that violated within-cluster limit. 
+
 ## Overview
 
 Phydelity, a redesign of [PhyCLIP](http://github.com/alvinxhan/PhyCLIP), is a statistically-principled and phylogeny-informed tool capable of identifying putative transmission clusters in pathogen phylogenies without the introduction of arbitrary distance thresholds.  
@@ -46,6 +50,7 @@ $ conda install gurobi
 ```
 $ cd /path/to/Phydelity-master/
 $ python setup.py install 
+$ python setup.py clean --all 
 ```
 
 2. **Run Phydelity**  

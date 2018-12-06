@@ -27,7 +27,7 @@ if __name__ == '__main__':
     analyses_options.add_argument('--k', type=int, help='Custom k neighbours (optional).')
     analyses_options.add_argument('--outgroup', type=str, default=False, help='Taxon (name as appeared in tree) to be set as outgroup OR type \'midpoint\' for midpoint-rooting.')
     analyses_options.add_argument('--collapse_zero_branch_length', action='store_true', help='Collapse internal nodes with zero branch length of tree before running Phydelity.')
-    analyses_options.add_argument('--equivalent_zero_length', default=0.000001, type=np.float32, help='Maximum branch length to be rounded to zero if the --collapse_zero_branch_length flag is passed (default = %(default)s).')
+    analyses_options.add_argument('--equivalent_zero_length', default=0.000001, type=np.float64, help='Maximum branch length to be rounded to zero if the --collapse_zero_branch_length flag is passed (default = %(default)s).')
 
     solver_options = parser.add_argument_group('Solver options')
     """
@@ -139,7 +139,7 @@ if __name__ == '__main__':
         from phyilpx import p_hypotest
         print ('Auto-scaling k...')
 
-    closest_distance_diff_distribution = np.zeros(len(global_leaf_node_id_to_leafname), dtype=np.float32)
+    closest_distance_diff_distribution = np.zeros(len(global_leaf_node_id_to_leafname), dtype=np.float64)
 
     for _, leaf in enumerate(global_leaf_node_id_to_leafname.keys()):
         # get closest neighbouring leaf of leaf
@@ -220,8 +220,8 @@ if __name__ == '__main__':
         if len(k_range) > 1: # auto-scaling of k
             if k_strains > 2:
 
-                p_val = p_hypotest(np.array(sorted(set(core_member_pairwise_leafdist)), dtype=np.float32),
-                                   np.array(sorted(set(prev_core_member_pairwise_distance)), dtype=np.float32), 1)
+                p_val = p_hypotest(np.array(sorted(set(core_member_pairwise_leafdist)), dtype=np.float64),
+                                   np.array(sorted(set(prev_core_member_pairwise_distance)), dtype=np.float64), 1)
 
                 if p_val < 0.05:
                     wcl = np.amax(prev_core_member_pairwise_distance)
@@ -289,7 +289,10 @@ if __name__ == '__main__':
                 curr_clusterid_to_taxa[clusterid] = [taxon]
 
         print ('\nCleaning up clusters...')
-        cleanup_object = clean_up_modules(curr_node_to_descendant_nodes, global_node_to_leaves, curr_node_to_leaves, wcl, cs, global_leaf_dist_to_node, global_leaf_to_ancestors, global_node_to_parent_node, global_nodepair_to_dist)
+        cleanup_object = clean_up_modules(curr_node_to_descendant_nodes, global_node_to_leaves, curr_node_to_leaves, wcl, cs, global_leaf_dist_to_node, global_leaf_to_ancestors, global_node_to_parent_node, global_nodepair_to_dist, global_leaf_node_id_to_leafname)
+
+        # ensure that there are no weird odd leaves that are further away from everyone else
+        curr_clusterid_to_taxa, curr_taxon_to_clusterid = cleanup_object.remove_odd_leaf(curr_clusterid_to_taxa, curr_taxon_to_clusterid)
 
         # ensure that the most descendant-possible node-id is subtending each cluster
         curr_clusterid_to_taxa, curr_taxon_to_clusterid = cleanup_object.transmission_cleanup(curr_clusterid_to_taxa, curr_taxon_to_clusterid)

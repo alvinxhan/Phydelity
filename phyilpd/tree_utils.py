@@ -131,8 +131,8 @@ class node_leaves_reassociation():
     def network_conservation(self, tcct_leaves, main_node, desc_nodes):
         from phyilpd.stats_utils import qn
 
-        nodes_to_visit = np.array([main_node] + desc_nodes, dtype='i4')
-        node_to_distance_dist = np.zeros((len(nodes_to_visit), len(tcct_leaves)), dtype='f4')
+        nodes_to_visit = np.array([main_node] + desc_nodes, dtype=np.int32)
+        node_to_distance_dist = np.zeros((len(nodes_to_visit), len(tcct_leaves)), dtype=np.float64)
 
         for _n, node in enumerate(nodes_to_visit):
             for _l, leaf in enumerate(tcct_leaves):
@@ -243,7 +243,7 @@ class node_leaves_reassociation():
                 else:
                     leaves_to_keep, descendant_nodes_to_dissociate, mean_pwdist = loo_output
                     # update node_to_leaves as per output of leave-one-out-wcl approach first
-                    sd_node_to_leaves[node] = np.array(leaves_to_keep[:], dtype = 'i4')
+                    sd_node_to_leaves[node] = np.array(leaves_to_keep[:], dtype = np.int32)
 
                     try:
                         # dissociate descendant nodes from node if any
@@ -276,7 +276,7 @@ class node_leaves_reassociation():
                 leaves_to_keep, loo_descendant_nodes_to_dissociate, mean_pwdist = loo_output
                 # update as per output of leave-one-out-wcl approach
                 # update node to remaining leaves
-                sd_node_to_leaves[node] = np.array(leaves_to_keep[:], dtype = 'i4')
+                sd_node_to_leaves[node] = np.array(leaves_to_keep[:], dtype = np.int32)
                 # dissociate descendant nodes from node
                 descendant_nodes_to_dissociate = list(set(descendant_nodes_to_dissociate)|set(loo_descendant_nodes_to_dissociate))
 
@@ -323,7 +323,7 @@ class node_leaves_reassociation():
                     leaves_to_keep, descendant_nodes_to_dissociate, mean_pwdist = loo_output
                     # update as per output of leave-one-out-wcl approach
                     # update node to remaining leaves
-                    sd_node_to_leaves[node] = np.array(leaves_to_keep[:], dtype='i4')
+                    sd_node_to_leaves[node] = np.array(leaves_to_keep[:], dtype=np.int32)
                     # dissociate descendant nodes from node
                     sd_node_to_descendant_nodes[node] = list(set(sd_node_to_descendant_nodes[node])-set(descendant_nodes_to_dissociate))
 
@@ -347,7 +347,7 @@ class node_leaves_reassociation():
 # clean-up modules
 class clean_up_modules():
 
-    def __init__(self, current_node_to_descendant_nodes=None, node_to_leaves=None, current_node_to_leaves=None, within_cluster_limit=None, min_cluster_size=None, leaf_dist_to_node=None, leaf_to_ancestors=None, node_to_parent_node=None, nodepair_to_dist=None):
+    def __init__(self, current_node_to_descendant_nodes=None, node_to_leaves=None, current_node_to_leaves=None, within_cluster_limit=None, min_cluster_size=None, leaf_dist_to_node=None, leaf_to_ancestors=None, node_to_parent_node=None, nodepair_to_dist=None, leaf_node_id_to_leafname=None):
 
         self.current_node_to_descendant_nodes = current_node_to_descendant_nodes
         self.node_to_leaves = node_to_leaves
@@ -358,6 +358,7 @@ class clean_up_modules():
         self.leaf_to_ancestors = leaf_to_ancestors
         self.node_to_parent_node = node_to_parent_node
         self.nodepair_to_dist = nodepair_to_dist
+        self.leaf_node_id_to_leafname = leaf_node_id_to_leafname
 
     def transmission_cleanup(self, clusterid_to_taxa, taxon_to_clusterid):
         for cluster in sorted(clusterid_to_taxa.keys()): # clusters are ordered by ancestry
@@ -387,6 +388,50 @@ class clean_up_modules():
                 del clusterid_to_taxa[cluster]
                 for taxon in taxa:
                     del taxon_to_clusterid[taxon]
+
+        return clusterid_to_taxa, taxon_to_clusterid
+
+    def remove_odd_leaf(self, clusterid_to_taxa, taxon_to_clusterid):
+        from phyilpd.stats_utils import qn
+
+        for clusterid, taxa in clusterid_to_taxa.items():
+
+            if len(taxa) <= 3: # skip anything less than/equals to a trio
+                continue
+
+            # check mean pairwise distance
+            sorted_taxa = sorted(taxa)
+            N = len(sorted_taxa)
+            new_pwdist = np.full((N, N), np.nan, dtype=np.float64)
+            for _i, _j in itertools.combinations(range(N), 2):
+                new_pwdist[(_i, _j)] = new_pwdist[(_j, _i)] = self.nodepair_to_dist[(sorted_taxa[_i], sorted_taxa[_j])]
+
+            leaves_flagged = {}
+            # get the median distance of pairwise leaf distance for each leaf to all of its cluster mates
+            for i in xrange(N):
+                pwdist_of_leaf = new_pwdist[(i,)]
+                pwdist_of_leaf = pwdist_of_leaf[~np.isnan(pwdist_of_leaf)]
+                med_x = np.median(pwdist_of_leaf)
+                mad_x = qn([_ for _ in pwdist_of_leaf if _ >= med_x])
+                wc_tol = med_x + 5*mad_x # set to 5x to be CLEAR outliers
+
+                for j in xrange(N):
+                    if j == i:
+                        continue
+                    if new_pwdist[(i,j)] > wc_tol:
+                        try:
+                            leaves_flagged[sorted_taxa[j]] += 1
+                        except:
+                            leaves_flagged[sorted_taxa[j]] = 1
+
+            leaves_flagged = [k for k,v in leaves_flagged.items() if v/(N-1) > 0.9]
+
+            if len(leaves_flagged) > 0:
+                clusterid_to_taxa[clusterid] = list(set(taxa) - set(leaves_flagged))
+                for leaf in leaves_flagged:
+                    del taxon_to_clusterid[leaf]
+
+        clusterid_to_taxa, taxon_to_clusterid = self.remove_clusters_below_cs(clusterid_to_taxa, taxon_to_clusterid)
 
         return clusterid_to_taxa, taxon_to_clusterid
 
@@ -443,18 +488,19 @@ class clean_up_modules():
         for clusterid, taxa in clusterid_to_taxa.items():
             # check mean pairwise distance
             leafpairs_list = list(itertools.combinations(taxa, 2))
-            new_pwdist = np.zeros(len(leafpairs_list), dtype='f4')
+            new_pwdist = np.zeros(len(leafpairs_list), dtype=np.float64)
             for _, (i,j) in enumerate(leafpairs_list):
                 new_pwdist[_] = self.nodepair_to_dist[(i, j)]
 
             if np.mean(new_pwdist) > self.within_cluster_limit:
                 # reverse sort clustered taxa by distance to node
                 leaf_dist_of_cluster = {}
-                for leaf in self.node_to_leaves[clusterid]:
+                for leaf in taxa:
                     leaf_dist_of_cluster[leaf] = self.leaf_dist_to_node[(leaf, clusterid)]
                 rsorted_taxa = sorted(leaf_dist_of_cluster.keys(), key=leaf_dist_of_cluster.get, reverse=True)
 
                 loo_output_binary, loo_output = self.leave_one_out_leaf_reduction_cleanup(rsorted_taxa, clusterid)
+
                 if loo_output_binary == False:
                     # remvoe entire cluster since it entirely violates the within cluster limit
                     del clusterid_to_taxa[clusterid]
