@@ -25,7 +25,7 @@ ext_modules=[
 
 setup(
     name = 'Phydelity',
-    version = '1.0',
+    version = '2.0',
     author = 'Alvin X. Han',
     author_email = 'hanxc@bii.a-star.edu.sg',
     description = ('Phydelity.'),

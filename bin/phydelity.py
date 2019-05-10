@@ -4,9 +4,11 @@
 # Author: Alvin X. Han & Edyth Parker
 
 from __future__ import division
+from scipy.stats import mannwhitneyu
 import re
 import argparse
 import numpy as np
+import pandas as pd
 import itertools
 import time
 
@@ -17,7 +19,7 @@ from phyilpd.stats_utils import qn, get_cluster_size_distribution
 
 if __name__ == '__main__':
     # parse parameters
-    version = 1.0
+    version = 2.0
     parser = argparse.ArgumentParser(description='Phydelity v{}'.format(version))
 
     required_args = parser.add_argument_group('Required')
@@ -27,7 +29,7 @@ if __name__ == '__main__':
     analyses_options.add_argument('--k', type=int, help='Custom k neighbours (optional).')
     analyses_options.add_argument('--outgroup', type=str, default=False, help='Taxon (name as appeared in tree) to be set as outgroup OR type \'midpoint\' for midpoint-rooting.')
     analyses_options.add_argument('--collapse_zero_branch_length', action='store_true', help='Collapse internal nodes with zero branch length of tree before running Phydelity.')
-    analyses_options.add_argument('--equivalent_zero_length', default=0.000001, type=np.float64, help='Maximum branch length to be rounded to zero if the --collapse_zero_branch_length flag is passed (default = %(default)s).')
+    analyses_options.add_argument('--equivalent_zero_length', default=1e-6, type=np.float64, help='Maximum branch length to be rounded to zero if the --collapse_zero_branch_length flag is passed (default = %(default)s).')
 
     solver_options = parser.add_argument_group('Solver options')
     """
@@ -111,7 +113,7 @@ if __name__ == '__main__':
     from phyilpx import phyilpx_treeinfo
     phyilpx_obj = phyilpx_treeinfo(newick_tree_string, treefname, params.outgroup, params.collapse_zero_branch_length, params.equivalent_zero_length)
 
-    global_leaf_node_id_to_leafname, original_tree_string = phyilpx_obj.properties()
+    global_leaf_node_id_to_leafname, original_tree_string, global_node_to_child_leaves = phyilpx_obj.properties()
 
     # get pairwise distance array (nodepair = all nodes including leaves, leafpair = structured, just leaves)
     global_nodepair_to_dist, global_leafpair_to_distance = phyilpx_obj.get_nodepair_distance()
@@ -135,10 +137,11 @@ if __name__ == '__main__':
         k_range = [params.k]
         print ('WARNING: k fixed at {}.'.format(params.k))
     else:
-        k_range = range(2, 6)
+        k_range = range(2, 6) # 2<= autoscaled k <= 5
         from phyilpx import p_hypotest
-        print ('Auto-scaling k...')
 
+    # First, we determine the precision to which we should round pairwise distance to. This is determined based on the
+    # median closest pair difference.
     closest_distance_diff_distribution = np.zeros(len(global_leaf_node_id_to_leafname), dtype=np.float64)
 
     for _, leaf in enumerate(global_leaf_node_id_to_leafname.keys()):
@@ -146,7 +149,7 @@ if __name__ == '__main__':
         j_array = global_leafpair_to_distance[global_leafpair_to_distance['leaf_i'] == leaf][['leaf_j', 'dist']]
         closest_leaf = np.sort(j_array, order='dist')['leaf_j'][0]
 
-        # get diff of distance of mrca to leaf and neighbour leaf
+        # get difference of distance of mrca to leaf and neighbour leaf
         mrca_node = np.max(list(set(global_leaf_to_ancestors[leaf])&set(global_leaf_to_ancestors[closest_leaf])))
         mrca_leaf_dist = global_leaf_dist_to_node[(leaf, mrca_node)]
         mrca_neighbour_dist = global_leaf_dist_to_node[(closest_leaf, mrca_node)]
@@ -156,15 +159,23 @@ if __name__ == '__main__':
     # get median difference of closest pairwise distances
     median_closest_distance_diff = np.median(closest_distance_diff_distribution)
 
-    # if median closest pair distance < 1, then number of demical place to the 2 significant digit will be the deimcal place to round
-    if median_closest_distance_diff < 1:
+    # if median closest pair distance < 1, then number of demical place to the 2 significant digit will be the deimcal
+    # place to round
+    if median_closest_distance_diff == 0.:
+        decimals_to_round = np.int64(np.abs(np.log10(np.min([_ for _ in closest_distance_diff_distribution if _ > 0.])))) + 2
+    elif median_closest_distance_diff < 1:
         decimals_to_round = np.int64(np.abs(np.log10(median_closest_distance_diff))) + 2
     else:
         decimals_to_round = 2
 
+    # construct dictionary of leaf_j(s) for every leaf_i, grouped by their distance to leaf_i
     leaf_to_dist_to_csleaf = {}
+    identical_leaves = {}
     for leaf_i, leaf_j in itertools.combinations(global_leaf_node_id_to_leafname.keys(), 2):
         dist = np.round(global_nodepair_to_dist[(leaf_i, leaf_j)], decimals=decimals_to_round)
+
+        if np.absolute(dist - 2*params.equivalent_zero_length) <= 2*params.equivalent_zero_length:
+            dist = 0.
 
         try:
             leaf_to_dist_to_csleaf[leaf_i][dist].append(leaf_j)
@@ -182,14 +193,22 @@ if __name__ == '__main__':
             except:
                 leaf_to_dist_to_csleaf[leaf_j] = {dist:[leaf_i]}
 
+    # iterating over the possible k-values
     for k_strains in k_range:
-
         leaf_to_kth_sorted_cs_leaves = {}
         for leaf, dist_to_csleaf in leaf_to_dist_to_csleaf.items():
-            sorted_pw_distances = sorted(dist_to_csleaf.keys())[:k_strains]
+            # sort each leaf to every other leaf by their rounded pairwise distance up to the k-th closest neighbour
+            sorted_pw_distances = sorted(dist_to_csleaf.keys())
+            if sorted_pw_distances[0] == 0.:
+                sorted_pw_distances = sorted_pw_distances[1:k_strains+1]
+            else:
+                sorted_pw_distances = sorted_pw_distances[:k_strains]
+
             leaf_to_kth_sorted_cs_leaves[leaf] = [(distance, tuple(dist_to_csleaf[distance])) for distance in sorted_pw_distances]
 
         core_member_pairwise_leafdist = []
+        # for every leaf_i, the distance to its k-th closest neighbour leaf_j will be considered a core distance if
+        # leaf_i is also <= k-th closest neighbour of leaf_i
         for leaf, sorted_kth_dist_cleaves in leaf_to_kth_sorted_cs_leaves.items():
 
             dist_to_add = []
@@ -212,35 +231,63 @@ if __name__ == '__main__':
                 if add_to_core_dist_binary == 1:
                     core_member_pairwise_leafdist += dist_to_add
 
+        # Sort core member distance distribution
+        sorted_core_dist = np.sort(list(core_member_pairwise_leafdist))
+
+        # check that the i-th and (i-1)-th pairwise distance do not differ by more than a log
+        diff = []
+        for _d, d in enumerate(sorted_core_dist):
+            if (_d == 0) or (sorted_core_dist[_d-1] <= params.equivalent_zero_length):
+                continue
+
+            if abs(d-sorted_core_dist[_d-1])/sorted_core_dist[_d-1] <= params.equivalent_zero_length:
+                continue
+
+            diff.append(np.log10(abs(d-sorted_core_dist[_d-1])/sorted_core_dist[_d-1]))
+
+            if np.log10(abs(d-sorted_core_dist[_d-1])/sorted_core_dist[_d-1]) > 0.:
+                core_member_pairwise_leafdist = sorted_core_dist[:_d][:]
+                break
+
+        """
+        percentile_core = len(core_member_pairwise_leafdist)/len(sorted_core_dist)
+        if percentile_core < 0.01:
+            core_member_pairwise_leafdist = sorted_core_dist[:]
+        """
+
         med_x = np.median(core_member_pairwise_leafdist)
         mad_x = qn(core_member_pairwise_leafdist)
-
-        core_member_pairwise_leafdist = [_ for _ in core_member_pairwise_leafdist if _ <= med_x + mad_x]
+        # Any distance in the core pairwise distance distribution that is > med_x + mad_x is subsequently removed
+        # Hence, core distances of any taxa that are more distantly-related than the ensemble would be excluded.
+        core_member_pairwise_leafdist = np.sort([_ for _ in core_member_pairwise_leafdist if _ <= med_x + mad_x])
 
         if len(k_range) > 1: # auto-scaling of k
             if k_strains > 2:
 
-                p_val = p_hypotest(np.array(sorted(set(core_member_pairwise_leafdist)), dtype=np.float64),
-                                   np.array(sorted(set(prev_core_member_pairwise_distance)), dtype=np.float64), 1)
+                p_val = p_hypotest(core_member_pairwise_leafdist, prev_core_member_pairwise_distance, 1)
 
-                if p_val < 0.05:
+                if p_val < 0.01:
                     wcl = np.amax(prev_core_member_pairwise_distance)
                     k_strains -= 1
+                    print ('auto-scaling k...{}'.format(k_strains))
                     break
                 elif k_strains == 5:
                     wcl = np.amax(core_member_pairwise_leafdist)
+                    print ('auto-scaling k...{}'.format(k_strains))
                     break
+
             prev_core_member_pairwise_distance = core_member_pairwise_leafdist[:]
         else:
             wcl = np.amax(core_member_pairwise_leafdist)
+    print('MPL...{}'.format(wcl))
 
     # distal dissociation
     # level-order sorted list of nodes with leaves >= always 2 for transmission clusters (only reassociate such nodes)
     print ('\nDistal dissociation...')
     cs = 2 # min cluster size = pair
     curr_list_of_ancestral_node = np.sort(np.array([node for node, leaves in global_node_to_leaves.items() if len(leaves) >= cs], dtype=np.int64))
-    
-    nla_object = node_leaves_reassociation(cs, wcl, curr_list_of_ancestral_node, global_node_to_leaves, global_node_to_ancestral_nodes, global_node_to_descendant_nodes, global_node_to_mean_pwdist, global_node_to_mean_child_dist2anc, global_node_to_parent_node, global_nodepair_to_dist, global_leaf_dist_to_node, global_leaf_to_ancestors)
+
+    nla_object = node_leaves_reassociation(cs, wcl, curr_list_of_ancestral_node, global_node_to_leaves, global_node_to_ancestral_nodes, global_node_to_descendant_nodes, global_node_to_mean_pwdist, global_node_to_mean_child_dist2anc, global_node_to_parent_node, global_nodepair_to_dist, global_leaf_dist_to_node, global_leaf_to_ancestors, params.equivalent_zero_length, global_leaf_node_id_to_leafname, global_node_to_child_leaves, global_leaf_node_id_to_leafname)
 
     curr_node_to_leaves, curr_node_to_descendant_nodes, curr_node_to_mean_pwdist = nla_object.nla_main()
 
@@ -250,11 +297,33 @@ if __name__ == '__main__':
             del curr_node_to_leaves[node]
             continue
 
+    # no nodes remaining
+    if len(curr_node_to_leaves) == 0:
+        raise Exception("No solution available.")
+
+    # if two nodes have the same set of leaves, retain only the most descendant one
+    deleted_nodes = []
+    for node_i, node_j in itertools.combinations(curr_node_to_leaves.keys(), 2):
+        if node_i in deleted_nodes or node_j in deleted_nodes:
+            continue
+        if set(curr_node_to_leaves[node_i]) == set(curr_node_to_leaves[node_j]):
+            node_to_del = min([node_i, node_j])
+            deleted_nodes.append(node_to_del)
+            del curr_node_to_leaves[node_to_del]
+
     # update pairwise distance distributions and ancestry relations
     print ('\nUpdating tree info to ILP model...')
     curr_leaves = [x for y in curr_node_to_leaves.values() for x in y]
     curr_list_of_ancestral_node = curr_node_to_leaves.keys()[:]
     curr_node_to_descendant_nodes = {k:list(set(v)&set(curr_list_of_ancestral_node)) for k,v in curr_node_to_descendant_nodes.items() if k in curr_list_of_ancestral_node and len(v) > 0}
+
+    '''
+    for node, leaves in curr_node_to_leaves.items():
+        for leaf in leaves:
+            leaf_name = global_leaf_node_id_to_leafname[leaf]
+            if re.search("NUH0018", leaf_name):
+                print leaf, node
+    '''
 
     # Build ILP model and solve
     from phyilpd.gurobi_solver import gurobi_solver
@@ -283,16 +352,24 @@ if __name__ == '__main__':
 
         curr_clusterid_to_taxa = {}
         for taxon, clusterid in curr_taxon_to_clusterid.items():
+
+            """
+            taxon_name = global_leaf_node_id_to_leafname[taxon]
+            if re.search("IMH0028", taxon_name):
+                print taxon_name, clusterid
+            """
+
             try:
                 curr_clusterid_to_taxa[clusterid].append(taxon)
             except:
                 curr_clusterid_to_taxa[clusterid] = [taxon]
 
         print ('\nCleaning up clusters...')
-        cleanup_object = clean_up_modules(curr_node_to_descendant_nodes, global_node_to_leaves, curr_node_to_leaves, wcl, cs, global_leaf_dist_to_node, global_leaf_to_ancestors, global_node_to_parent_node, global_nodepair_to_dist, global_leaf_node_id_to_leafname)
+
+        cleanup_object = clean_up_modules(curr_node_to_descendant_nodes, global_node_to_leaves, curr_node_to_leaves, wcl, cs, global_leaf_dist_to_node, global_leaf_to_ancestors, global_node_to_parent_node, global_nodepair_to_dist, global_node_to_child_leaves, global_leaf_node_id_to_leafname)
 
         # ensure that there are no weird odd leaves that are further away from everyone else
-        curr_clusterid_to_taxa, curr_taxon_to_clusterid = cleanup_object.remove_odd_leaf(curr_clusterid_to_taxa, curr_taxon_to_clusterid)
+        #curr_clusterid_to_taxa, curr_taxon_to_clusterid = cleanup_object.remove_odd_leaf(curr_clusterid_to_taxa, curr_taxon_to_clusterid)
 
         # ensure that the most descendant-possible node-id is subtending each cluster
         curr_clusterid_to_taxa, curr_taxon_to_clusterid = cleanup_object.transmission_cleanup(curr_clusterid_to_taxa, curr_taxon_to_clusterid)
@@ -326,5 +403,6 @@ if __name__ == '__main__':
         # output pdf tree
         if params.pdf_tree:
             output_obj.ete3_pdf_tree_output()
+
 
     print ('\n...done.\n')

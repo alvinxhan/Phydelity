@@ -12,11 +12,13 @@ import time
 
 from phyilpd.tree_utils import collapse_zero_branch_length
 
+# C math functions
 cdef extern from "math.h":
     double exp "exp" (double)
     double sqrt "sqrt" (double)
     double fabs "fabs" (double)
 
+# kuiper test
 def p_hypotest(data1, data2, method):
     if method == 1:
         return kuiper(data1, data2)
@@ -119,6 +121,7 @@ cdef double kuiper(double [:] data1, double [:] data2):
         return prob
     """
 
+# Tree traversal class
 cdef struct Node:
     long parent
     long* children
@@ -136,7 +139,9 @@ cdef class phyilpx_treeinfo:
     cdef object internalnodes
     cdef object np_buffer
     cdef object node_to_leaves
+    cdef object node_to_child_leaves
     cdef object node_to_pwdist
+    cdef object node_to_descendant_nodes
     cdef str original_tree_string
     #cdef np.ndarray node_to_pwdist
     cdef np.ndarray leaf_dist_to_node
@@ -185,6 +190,7 @@ cdef class phyilpx_treeinfo:
         self.leaf_nodeid_to_leafname = {}
         self.leafname_to_leaf_nodeid = {}
         self.internalnodes = []
+        self.node_to_child_leaves = {}
 
         #self.ete_nodeid_to_node = {}
 
@@ -211,12 +217,19 @@ cdef class phyilpx_treeinfo:
             except:
                 self.data[node_id].parent = -1 # root
 
-            self.data[node_id].edge_distance = node.dist
+            node_dist = np.float64(node.dist)
+            if node_dist <= np.float64(eq_zero_branch_length):
+                self.data[node_id].edge_distance = np.float64(0.)
+            else:
+                self.data[node_id].edge_distance = node.dist
 
             if node.is_leaf():
+                # node is leaf
                 children_list = []
             else:
+                # get list of children nodes from internal node
                 children_list = [child_node.node_id for child_node in node.get_children()]
+                self.node_to_child_leaves[node_id] = np.array([child_node.node_id for child_node in node.get_children() if child_node.is_leaf()])
 
             self.data[node_id].children_length = len(children_list)
 
@@ -353,7 +366,7 @@ cdef class phyilpx_treeinfo:
         return 0
 
     def properties(self):
-        return self.leaf_nodeid_to_leafname, self.original_tree_string
+        return self.leaf_nodeid_to_leafname, self.original_tree_string, self.node_to_child_leaves
 
     def get_nodepair_distance(self):
         cdef long i
@@ -478,7 +491,6 @@ cdef class phyilpx_treeinfo:
 
         cdef object leaf_to_ancestors
         cdef object node_to_ancestral_nodes
-        cdef object node_to_descendant_nodes
         cdef object ancestors_to_n
         cdef object leafpairs_to_node
         cdef object node_to_mean_pwdist
@@ -492,7 +504,7 @@ cdef class phyilpx_treeinfo:
         self.node_to_pwdist = {}
         node_to_mean_pwdist = {}
         node_to_ancestral_nodes = {}
-        node_to_descendant_nodes = {}
+        self.node_to_descendant_nodes = {}
 
         for entry in np.sort(node_to_mean_child_dist2root, order='dist'): # starting node with the lowest mean children distance to root
             node_id, mean_dist_to_root = entry
@@ -510,9 +522,9 @@ cdef class phyilpx_treeinfo:
 
             for i in ancestors_to_n:
                 try:
-                    node_to_descendant_nodes[i].append(node_id)
+                    self.node_to_descendant_nodes[i].append(node_id)
                 except:
-                    node_to_descendant_nodes[i] = [node_id]
+                    self.node_to_descendant_nodes[i] = [node_id]
 
                 node_to_mean_child_dist2anc[(node_id, i)] = mean_dist_to_root - self.nodepair_to_distance[i][0] # indexed by node to anc
 
@@ -524,7 +536,7 @@ cdef class phyilpx_treeinfo:
             self.node_to_pwdist[node_id] = np.sort(pwdist_to_node)
             node_to_mean_pwdist[node_id] = np.mean(pwdist_to_node)
 
-        return node_to_ancestral_nodes, node_to_descendant_nodes, leaf_to_ancestors, node_to_mean_child_dist2anc, self.node_to_pwdist, node_to_mean_pwdist
+        return node_to_ancestral_nodes, self.node_to_descendant_nodes, leaf_to_ancestors, node_to_mean_child_dist2anc, self.node_to_pwdist, node_to_mean_pwdist
 
     def get_global_pval(self, hytest_method):
         cdef long i
@@ -564,6 +576,29 @@ cdef class phyilpx_treeinfo:
                 pval = hypotest(self.node_to_pwdist[i], self.node_to_pwdist[j], hytest_method)
 
             nodepair_to_pval[(i,j)] = nodepair_to_pval[(j,i)] = pval
+
+    def get_topology_metrics(self):
+        cdef object cherry_imbalance = []
+        cdef long node_id
+        cdef long leaf
+        cdef long N
+        cdef np.ndarray leaves_to_node
+        cdef np.ndarray leaf_distance_array
+        cdef double imbalance
+
+        for node_id, leaves_to_node in self.node_to_leaves.items():
+            N = len(leaves_to_node)
+
+            if N == 2:
+                # get leaf to node distance array
+                leaf_distance_array = np.zeros(N, dtype=np.float64)
+                for l, leaf in enumerate(leaves_to_node):
+                    leaf_distance_array[l] = self.nodepair_to_distance[(leaf, node_id)]
+
+                cherry_imbalance.append(fabs(leaf_distance_array[0] - leaf_distance_array[1]))
+
+        return cherry_imbalance
+
 
     def __dealloc__(self):
         PyMem_Free(self.data)  # no-op if self.data is NULL

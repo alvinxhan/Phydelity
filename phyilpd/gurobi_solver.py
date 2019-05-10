@@ -82,7 +82,7 @@ def gurobi_solver(node_to_leaves, all_leaves, list_of_ancestral_node, node_to_me
 
     model.ModelSense = GRB.MAXIMIZE
 
-    model.setObjective(0.5*quicksum(leaf_decision[(leaf, n)] for (leaf, n) in leaf_binary_indices) + 0.5*quicksum(-node_decision[n] for n in list_of_ancestral_node))
+    model.setObjective(0.5 * quicksum(leaf_decision[(leaf, n)] for (leaf, n) in leaf_binary_indices) + 0.5 * -quicksum(node_decision[n] for n in list_of_ancestral_node))
 
     # update model
     model.update()

@@ -4,7 +4,8 @@ _Inferring putative transmission clusters from phylogenetic trees_
 
 ## Latest updates 
 
-* 6-Dec-2018: Fixed bug which was overly strict when cleaning up clusters that violated within-cluster limit. 
+* 10-May-2019: V2 release - Improved algorithm yielding clusters with higher purity and lower misclassification (see Manuscript for more details).  
+* 6-Dec-2018: Fixed bug which was overly strict when cleaning up clusters that violated within-cluster limit.  
 
 ## Overview
 
