@@ -13,7 +13,10 @@ import time
 from phyilpd.tree_utils import collapse_zero_branch_length
 
 IF UNAME_SYSNAME == "Windows":
-    ctypedef int64 long
+    ctypedef long long _int64
+ELSE:
+    ctypedef long _int64
+
 
 # C math functions
 cdef extern from "math.h":
@@ -27,7 +30,7 @@ def p_hypotest(data1, data2, method):
         return kuiper(data1, data2)
 
 @cython.boundscheck(False)
-cdef double hypotest(double[:] data1, double[:] data2, long method):
+cdef double hypotest(double[:] data1, double[:] data2, _int64 method):
     if method == 1:
         return kuiper(data1, data2)
 
@@ -43,7 +46,7 @@ cdef double _kuiper_dist(double q):
     cdef double termbf = 0.
     cdef double dist = 1.
 
-    cdef long j
+    cdef _int64 j
 
     a2 = -2*q*q
 
@@ -60,10 +63,10 @@ cdef double _kuiper_dist(double q):
 
 @cython.boundscheck(False)
 cdef double kuiper(double [:] data1, double [:] data2):
-    cdef long j1 = 0
-    cdef long j2 = 0
-    cdef long n1
-    cdef long n2
+    cdef _int64 j1 = 0
+    cdef _int64 j2 = 0
+    cdef _int64 n1
+    cdef _int64 n2
     cdef double eff_n
     cdef double fn1 = 0.
     cdef double fn2 = 0.
@@ -126,17 +129,17 @@ cdef double kuiper(double [:] data1, double [:] data2):
 
 # Tree traversal class
 cdef struct Node:
-    long parent
-    long* children
-    long children_length
+    _int64 parent
+    _int64* children
+    _int64 children_length
     double edge_distance
 
 @cython.no_gc_clear
 cdef class phyilpx_treeinfo:
 
     cdef Node* data
-    cdef long depth
-    cdef long total_nr_nodes
+    cdef _int64 depth
+    cdef _int64 total_nr_nodes
     cdef object leafname_to_leaf_nodeid
     cdef object leaf_nodeid_to_leafname
     cdef object internalnodes
@@ -154,7 +157,7 @@ cdef class phyilpx_treeinfo:
 
     def __init__(self, newick_tree, treefname, outgroup, collapse_zero_branch_length_binary, eq_zero_branch_length):
 
-        cdef long node_id
+        cdef _int64 node_id
 
         self.np_buffer = None # numpy memory buffer
 
@@ -236,7 +239,7 @@ cdef class phyilpx_treeinfo:
 
             self.data[node_id].children_length = len(children_list)
 
-            self.data[node_id].children = <long*> PyMem_Malloc(len(children_list) * sizeof(long))
+            self.data[node_id].children = <_int64*> PyMem_Malloc(len(children_list) * sizeof(_int64))
             if not self.data[node_id].children:
                 raise MemoryError()
 
@@ -260,8 +263,8 @@ cdef class phyilpx_treeinfo:
 
     def get_leaves(self, node_id):
         # return array of leaves subtended by a given node
-        cdef long i
-        cdef long n = 0
+        cdef _int64 i
+        cdef _int64 n = 0
 
         if self.np_buffer is None:
             self.np_buffer = np.ndarray(len(self.leaf_nodeid_to_leafname), dtype=np.int64)
@@ -283,11 +286,11 @@ cdef class phyilpx_treeinfo:
         return self._mrca(visited, a, b)
 
     @cython.boundscheck(False)
-    cdef long _mrca(self, long[:] visited, long a, long b) nogil :
-        cdef long n
-        cdef long i
-        cdef long mrca = -1
-        cdef long a_depth
+    cdef _int64 _mrca(self, _int64[:] visited, _int64 a, _int64 b) nogil :
+        cdef _int64 n
+        cdef _int64 i
+        cdef _int64 mrca = -1
+        cdef _int64 a_depth
 
         n = a
         i = 0
@@ -319,10 +322,10 @@ cdef class phyilpx_treeinfo:
         return mrca
 
     @cython.boundscheck(False)
-    cdef double get_distance(self, long a, long b):
-        cdef long mrca
+    cdef double get_distance(self, _int64 a, _int64 b):
+        cdef _int64 mrca
         cdef double d = 0
-        cdef long n
+        cdef _int64 n
 
         mrca = self.mrca(a, b)
 
@@ -341,9 +344,9 @@ cdef class phyilpx_treeinfo:
         return self._is_ancestor( a, b )
 
     @cython.boundscheck(False)
-    cdef long _is_ancestor(self, long a, long b) nogil :
-        cdef long i
-        cdef long n
+    cdef _int64 _is_ancestor(self, _int64 a, _int64 b) nogil :
+        cdef _int64 i
+        cdef _int64 n
 
         # is a an ancestor of b?
         i = b
@@ -372,15 +375,15 @@ cdef class phyilpx_treeinfo:
         return self.leaf_nodeid_to_leafname, self.original_tree_string, self.node_to_child_leaves
 
     def get_nodepair_distance(self):
-        cdef long i
-        cdef long j
-        cdef long k
-        cdef long N = self.total_nr_nodes # length of all nodes
+        cdef _int64 i
+        cdef _int64 j
+        cdef _int64 k
+        cdef _int64 N = self.total_nr_nodes # length of all nodes
         cdef double dist
 
         self.nodepair_to_distance = np.zeros((N,N), dtype=np.float64)
 
-        cdef long N_leafpairs = 2*nCr(len(self.leaf_nodeid_to_leafname), 2)
+        cdef _int64 N_leafpairs = 2*nCr(len(self.leaf_nodeid_to_leafname), 2)
         cdef np.ndarray leafpair_to_distance = np.zeros(N_leafpairs,
                                                         dtype = {'names':('leaf_i', 'leaf_j', 'dist'), 'formats':(np.int64, np.int64, np.float64)}) # structured array
 
@@ -400,10 +403,10 @@ cdef class phyilpx_treeinfo:
         return self.nodepair_to_distance, leafpair_to_distance
 
     def get_leaf_dist_to_node(self):
-        cdef long i, node_id
-        cdef long k = 0
-        #cdef long N = 0
-        cdef long N = self.total_nr_nodes
+        cdef _int64 i, node_id
+        cdef _int64 k = 0
+        #cdef _int64 N = 0
+        cdef _int64 N = self.total_nr_nodes
         cdef double dist
 
         cdef object leaf_to_ancestors
@@ -443,8 +446,8 @@ cdef class phyilpx_treeinfo:
         return self.leaf_dist_to_node, self.node_to_leaves
 
     def get_node_to_parent_node(self):
-        cdef long node_id, parent, i
-        cdef long N = self.total_nr_nodes - 1
+        cdef _int64 node_id, parent, i
+        cdef _int64 N = self.total_nr_nodes - 1
         #cdef np.ndarray node_to_parent_node = np.zeros(N, dtype={'names':('node', 'parent'), 'formats':(np.int64, np.int64)})
         cdef object node_to_parent_node = {}
 
@@ -457,15 +460,15 @@ cdef class phyilpx_treeinfo:
 
     def get_node_to_mean_child_dist2root(self):
 
-        cdef long node_id
-        cdef long child_node_id
-        cdef long i
-        cdef long k
+        cdef _int64 node_id
+        cdef _int64 child_node_id
+        cdef _int64 i
+        cdef _int64 k
         cdef double dist
 
         cdef object children_of_node
 
-        cdef long N = len(self.internalnodes)
+        cdef _int64 N = len(self.internalnodes)
         cdef np.ndarray child_dist_to_node
         cdef np.ndarray node_to_mean_child_dist2root = np.zeros(N, dtype={'names':('node', 'dist'), 'formats':(np.int64, np.float64)})
 
@@ -485,11 +488,11 @@ cdef class phyilpx_treeinfo:
     def get_ancestral_relations(self):
 
         cdef object entry
-        cdef long i
-        cdef long j
-        cdef long k
-        cdef long node_id
-        cdef long N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
+        cdef _int64 i
+        cdef _int64 j
+        cdef _int64 k
+        cdef _int64 node_id
+        cdef _int64 N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
         cdef double mean_dist_to_root
 
         cdef object leaf_to_ancestors
@@ -542,12 +545,12 @@ cdef class phyilpx_treeinfo:
         return node_to_ancestral_nodes, self.node_to_descendant_nodes, leaf_to_ancestors, node_to_mean_child_dist2anc, self.node_to_pwdist, node_to_mean_pwdist
 
     def get_global_pval(self, hytest_method):
-        cdef long i
-        cdef long j
-        cdef long x
-        cdef long y
-        cdef long k
-        cdef long N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
+        cdef _int64 i
+        cdef _int64 j
+        cdef _int64 x
+        cdef _int64 y
+        cdef _int64 k
+        cdef _int64 N = len(self.internalnodes) + len(self.leaf_nodeid_to_leafname)
         cdef double pval
         cdef double pval0
         cdef double pval1
@@ -582,9 +585,9 @@ cdef class phyilpx_treeinfo:
 
     def get_topology_metrics(self):
         cdef object cherry_imbalance = []
-        cdef long node_id
-        cdef long leaf
-        cdef long N
+        cdef _int64 node_id
+        cdef _int64 leaf
+        cdef _int64 N
         cdef np.ndarray leaves_to_node
         cdef np.ndarray leaf_distance_array
         cdef double imbalance
