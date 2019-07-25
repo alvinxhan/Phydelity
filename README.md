@@ -4,7 +4,8 @@ _Inferring putative transmission clusters from phylogenetic trees_
 
 ## Latest updates 
 
-* 10-May-2019: V2 release - Improved algorithm yielding clusters with higher purity and lower probability of misclassification (see Manuscript for more details).  
+* 25-Jul-2019: V2.1 - Minor bug fixes; tested on Windows 
+* 10-May-2019: V2.0 - Improved algorithm yielding clusters with higher purity and lower probability of misclassification (see Manuscript for more details).  
 * 6-Dec-2018: Fixed bug which was overly strict when cleaning up clusters that violated within-cluster limit.  
 
 ## Overview
@@ -41,7 +42,7 @@ $ conda install gurobi
 * Obtain Gurobi license.  
   Method I: If your machine is connected to the internet via a recognized academic domain (e.g. '.edu' addresss) 
     * Register a FREE account via http://www.gurobi.com/registration/academic-license-reg 
-    * Login and access http://user.gurobi.com/download/licenses/free-academic 
+    * Login and access https://www.gurobi.com/downloads/end-user-license-agreement-academic/ to download license.  
     * Follow instructions on page to retrieve your license or check [here](https://github.com/alvinxhan/PhyCLIP/wiki/II.-Installation) for more details.   
   
   Method II: If your machine is **NOT** connected via an academic domain but you can verify that you are an academic user.  
