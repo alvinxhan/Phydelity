@@ -169,12 +169,20 @@ class node_leaves_reassociation():
 
         # calculate median and mad of pairwise nodes distance distribution
         tril_d_array = np.tril(pairwise_d_array)
-        tril_d_array = tril_d_array[(~np.isnan(tril_d_array))&(tril_d_array > 0.)]
-        try:
-            mad_x = qn(tril_d_array)
-        except:
+        tril_d_array = tril_d_array[~np.isnan(tril_d_array)]
+
+        if set(tril_d_array) == set([0.]):
+            med_x = 0.
             mad_x = 0.
-        med_x = np.median(tril_d_array)
+        else:
+            tril_d_array = tril_d_array[tril_d_array > 0.]
+            med_x = np.median(tril_d_array)
+            try:
+                mad_x = qn(tril_d_array)
+            except:
+                mad_x = 0.
+
+
         dispersal_threshold = med_x + 3 * mad_x
 
         if np.absolute(dispersal_threshold - 2 * self.equivalent_zero_length) <= self.equivalent_zero_length:
@@ -422,7 +430,7 @@ class node_leaves_reassociation():
             rdrn_leaves_output = self.remove_distantly_related_nodes(leaves_to_node, node, desc_nodes_list, mean_pwdist)
 
             '''
-            if node == 275:
+            if node == 82:
                 print rdrn_leaves_output
             '''
 
