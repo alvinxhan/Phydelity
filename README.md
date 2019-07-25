@@ -4,7 +4,7 @@ _Inferring putative transmission clusters from phylogenetic trees_
 
 ## Latest updates 
 
-* 25-Jul-2019: V2.1 - Minor bug fixes; tested on Windows 
+* 25-Jul-2019: V2.1 - Fixed int64 type declaration for cross-platform compatibility; tested on Windows and Mac
 * 10-May-2019: V2.0 - Improved algorithm yielding clusters with higher purity and lower probability of misclassification (see Manuscript for more details).  
 * 6-Dec-2018: Fixed bug which was overly strict when cleaning up clusters that violated within-cluster limit.  
 
