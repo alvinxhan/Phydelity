@@ -6,12 +6,14 @@ import cython
 from scipy.misc import comb as nCr
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 cimport numpy as np
-from libc.stdint cimport int32_t, int64_t
 
 from ete3 import Tree
 import time
 
 from phyilpd.tree_utils import collapse_zero_branch_length
+
+IF UNAME_SYSNAME == "Windows":
+    ctypedef int64 long
 
 # C math functions
 cdef extern from "math.h":
