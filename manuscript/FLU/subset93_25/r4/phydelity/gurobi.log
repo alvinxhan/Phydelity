@@ -1,0 +1,46 @@
+
+Gurobi 8.1.1 (mac64, Python) logging started Thu Jul 25 16:02:25 2019
+
+Academic license - for non-commercial use only
+Changed value of parameter Seed to 666
+   Prev: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter Method to 1
+   Prev: -1  Min: -1  Max: 5  Default: -1
+Changed value of parameter NumericFocus to 3
+   Prev: 0  Min: 0  Max: 3  Default: 0
+Changed value of parameter LogToConsole to 0
+   Prev: 1  Min: 0  Max: 1  Default: 1
+Optimize a model with 258 rows, 116 columns and 532 nonzeros
+Variable types: 0 continuous, 116 integer (116 binary)
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+03]
+  Objective range  [5e-01, 5e-01]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [1e+00, 1e+03]
+Found heuristic solution: objective -0.0000000
+Presolve removed 241 rows and 106 columns
+Presolve time: 0.00s
+Presolved: 17 rows, 10 columns, 41 nonzeros
+Found heuristic solution: objective 18.0000000
+Variable types: 0 continuous, 10 integer (10 binary)
+
+Root relaxation: objective 1.900000e+01, 4 iterations, 0.00 seconds
+
+    Nodes    |    Current Node    |     Objective Bounds      |     Work
+ Expl Unexpl |  Obj  Depth IntInf | Incumbent    BestBd   Gap | It/Node Time
+
+*    0     0               0      19.0000000   19.00000  0.00%     -    0s
+
+Explored 0 nodes (4 simplex iterations) in 0.00 seconds
+Thread count was 8 (of 8 available processors)
+
+Solution count 3: 19 18 17.5 
+
+Optimal solution found (tolerance 1.00e-04)
+Best objective 1.900000000000e+01, best bound 1.900000000000e+01, gap 0.0000%
+Parameter solutionNumber unchanged
+   Value: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter solutionNumber to 1
+   Prev: 0  Min: 0  Max: 2000000000  Default: 0
+Changed value of parameter solutionNumber to 2
+   Prev: 1  Min: 0  Max: 2000000000  Default: 0

@@ -7,7 +7,9 @@ Instructions:
 2. Install Phydelity. 
 3. Run compare_clustering_results.ipynb to compare results between Phydelity, WPGMA and MSBD methods.
 
-*** Empirical datasets - Hepatitis B viruses from Matsuo et al. (2017) and hepatitis C viruses from Charre et al. (2018) *** 
+*** Empirical datasets - Hepatitis B viruses from Matsuo et al. (2017), hepatitis C viruses from Charre et al. (2018), Seasonal H3N2 influenza viruses from McCrone et al. (2018) *** 
 
 Instructions: 
-1. Simply run the jupyter notebook as is in the respective HBV and HCV folders 
+1. Simply run the jupyter notebook as is in the respective HBV, HCV and FLU folders 
+
+

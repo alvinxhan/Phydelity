@@ -1,0 +1,217 @@
+
+
+IMPORTANT WARNING: Sequences HS1531 and MH8592 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1537 and MH8390 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7852 and HS1390 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7852 and HS1391 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1604 and MH9045 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7855 and HS1351 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7855 and HS1402 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7855 and HS1401 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7855 and MH7687 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7611 and HS1335 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7611 and MH7612 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1520 and MH8445 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1520 and HS1519 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1328 and MH7520 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1328 and MH7564 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1448 and MH8125 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7627 and HS1340 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH8714 and HS1554 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1294 and MH7385 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1294 and HS1253 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1294 and HS1250 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1595 and MH8924 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1345 and MH7890 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1507 and MH8386 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1505 and MH8392 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1505 and MH8391 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1460 and MH7953 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1460 and HS1427 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7884 and MH7885 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7884 and MH7886 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7884 and HS1408 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7884 and HS1409 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7804 and MH7565 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7804 and HS1313 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH7804 and HS1387 are exactly identical
+
+
+IMPORTANT WARNING: Sequences MH8041 and MH8158 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1573 and MH8765 are exactly identical
+
+
+IMPORTANT WARNING: Sequences HS1394 and MH7843 are exactly identical
+
+IMPORTANT WARNING
+Found 38 sequences that are exactly identical to other sequences in the alignment.
+Normally they should be excluded from the analysis.
+
+An alignment file with sequence duplicates removed has already
+been printed to file ../mafft_concatenated_seqeunces_2014_H3N2.fasta.reduced
+
+
+Using BFGS method to optimize GTR rate parameters, to disable this specify "--no-bfgs" 
+
+
+
+This is RAxML version 8.2.6 released by Alexandros Stamatakis on February 26 2016.
+
+With greatly appreciated code contributions by:
+Andre Aberer      (HITS)
+Simon Berger      (HITS)
+Alexey Kozlov     (HITS)
+Kassian Kobert    (HITS)
+David Dao         (KIT and HITS)
+Nick Pattengale   (Sandia)
+Wayne Pfeiffer    (SDSC)
+Akifumi S. Tanabe (NRIFS)
+
+Alignment has 469 distinct alignment patterns
+
+Proportion of gaps and completely undetermined characters in this alignment: 0.01%
+
+RAxML rapid hill-climbing mode
+
+Using 1 distinct models/data partitions with joint branch length optimization
+
+
+Executing 10 inferences on the original alignment using 10 distinct randomized MP trees
+
+All free model parameters will be estimated by RAxML
+GAMMA model of rate heteorgeneity, ML estimate of alpha-parameter
+
+GAMMA Model parameters will be estimated up to an accuracy of 0.1000000000 Log Likelihood units
+
+Partition: 0
+Alignment Patterns: 469
+Name: No Name Provided
+DataType: DNA
+Substitution Matrix: GTR
+
+
+
+
+RAxML was called as follows:
+
+raxmlHPC-PTHREADS-AVX2 -T 4 -m GTRGAMMA -p 666 -# 10 -s ../mafft_concatenated_seqeunces_2014_H3N2.fasta -n mccrone_h3n2_2014 
+
+
+Partition: 0 with name: No Name Provided
+Base frequencies: 0.336 0.191 0.239 0.234 
+
+Inference[0]: Time 43.412799 GAMMA-based likelihood -27793.943577, best rearrangement setting 10
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 2.997792 9.009894 1.675811 1.145265 11.320899 1.000000 
+Inference[1]: Time 23.809209 GAMMA-based likelihood -27794.554493, best rearrangement setting 5
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.136763 9.405502 1.810911 1.203893 11.803390 1.000000 
+Inference[2]: Time 29.708656 GAMMA-based likelihood -27793.197976, best rearrangement setting 5
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.046187 9.157978 1.771462 1.163075 11.542759 1.000000 
+Inference[3]: Time 27.562026 GAMMA-based likelihood -27793.535977, best rearrangement setting 10
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 2.865451 8.674495 1.668932 1.111421 10.921211 1.000000 
+Inference[4]: Time 31.041453 GAMMA-based likelihood -27794.492589, best rearrangement setting 10
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.143918 9.430923 1.790468 1.188789 11.767310 1.000000 
+Inference[5]: Time 18.650655 GAMMA-based likelihood -27792.681033, best rearrangement setting 5
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.446413 10.389948 1.938118 1.279786 13.028296 1.000000 
+Inference[6]: Time 22.638665 GAMMA-based likelihood -27791.559160, best rearrangement setting 5
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.289870 10.059145 1.874634 1.209779 12.451374 1.000000 
+Inference[7]: Time 28.308618 GAMMA-based likelihood -27792.846604, best rearrangement setting 10
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.044117 9.186573 1.754059 1.165837 11.515457 1.000000 
+Inference[8]: Time 26.477551 GAMMA-based likelihood -27797.620472, best rearrangement setting 5
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 2.972478 9.077684 1.731850 1.115907 11.542059 1.000000 
+Inference[9]: Time 25.786027 GAMMA-based likelihood -27795.065619, best rearrangement setting 10
+alpha[0]: 0.020000 rates[0] ac ag at cg ct gt: 3.083849 9.359466 1.763347 1.184223 11.759959 1.000000 
+
+
+Conducting final model optimizations on all 10 trees under GAMMA-based models ....
+
+Inference[0] final GAMMA-based Likelihood: -27793.875648 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.0
+Inference[1] final GAMMA-based Likelihood: -27794.557241 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.1
+Inference[2] final GAMMA-based Likelihood: -27793.149819 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.2
+Inference[3] final GAMMA-based Likelihood: -27793.309479 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.3
+Inference[4] final GAMMA-based Likelihood: -27794.514324 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.4
+Inference[5] final GAMMA-based Likelihood: -27792.692017 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.5
+Inference[6] final GAMMA-based Likelihood: -27791.582755 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.6
+Inference[7] final GAMMA-based Likelihood: -27792.815302 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.7
+Inference[8] final GAMMA-based Likelihood: -27797.575449 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.8
+Inference[9] final GAMMA-based Likelihood: -27795.079986 tree written to file /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_result.mccrone_h3n2_2014.RUN.9
+
+
+Starting final GAMMA-based thorough Optimization on tree 6 likelihood -27791.582755 .... 
+
+Final GAMMA-based Score of best tree -27791.582764
+
+Program execution info written to /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_info.mccrone_h3n2_2014
+Best-scoring ML tree written to: /mnt/penx_store/Dropbox/temp_phydelity/McCrone_Transmission_Pairs/raxml/RAxML_bestTree.mccrone_h3n2_2014
+
+Overall execution time: 291.864334 secs or 0.081073 hours or 0.003378 days
+
