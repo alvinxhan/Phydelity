@@ -16,10 +16,8 @@ Minimally, Phydelity only requires a phylogeny (in NEWICK format) as input.
 
 Phydelity infers the within-cluster divergence of putative transmission clusters by first determining the pairwise patristic distance distribution of closely-related tips. This distance distribution comprises of the pairwise distances of sequence _j_ and its closest _k_-neighbouring tips, where the closest _k_-neighbours includes sequence _j_. The user can **optionally** input the desired _k_ parameter **_OR_** allow Phydelity to **automatically scale _k_ to yield the supremum distribution with the lowest overall divergence**.  
 
-A manuscript describing Phydelity is currently available on bioRxiv:  
-Inferring putative transmission clusters with Phydelity  
-Alvin Han, Edyth Parker, Sebastian Maurer-Stroh, Colin Russell  
-bioRxiv 477653; doi: https://doi.org/10.1101/477653  
+To cite Phydelity:  
+Alvin X Han, Edyth Parker, Sebastian Maurer-Stroh, Colin A Russell, Inferring putative transmission clusters with Phydelity, Virus Evolution, Volume 5, Issue 2, July 2019, vez039, https://doi.org/10.1093/ve/vez039
 
 ## Quickstart (for users of an academic institution only)
 1. **Installation**  
